@@ -15,7 +15,7 @@ using namespace cv;
 enum posC {E,NE,N,NW,W,SW,S,SE};
 int currentDir=0;
 Point2d retrieveNextB(Mat img, Point2d b);
-Point2d retrieveNextC(Mat img, Point2d b);
+bool containsPoint(vector<Point>, Point);
 
 
 int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec);
@@ -23,7 +23,7 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec);
 
 int main() {
 
-	Mat frame = imread("C:/Users/Arthur/Documents/Moore/Moore/basisfiguren.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/Moore/basisfiguren.jpg", CV_LOAD_IMAGE_COLOR);
 
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
@@ -44,9 +44,15 @@ int main() {
 	binaryImageShow.convertTo(binary16SShow, CV_16S);
 	imshow("binary", binary16SShow);
 
-	vector< vector<Point> > *contourVecVec;
+	vector< vector<Point> > *contourVecVec = new vector<vector<Point>>();
 
 	allContours(binary16S, *contourVecVec);
+
+	for (vector<Point> vec: *contourVecVec )
+	{
+		for(Point e :  vec)
+		circle(gray_image, e, 3, Scalar(128, 128, 128));
+	}
 
 	
 	waitKey(27);
@@ -61,6 +67,13 @@ int main() {
 int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 {
 	Mat labeledImage;
+	Mat C = (Mat_<double>(3, 3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
+	binaryImage = (Mat_<double>(6, 6) << 0, 0, 0, 0, 0, 0,
+		0,1,1,1,0,0,
+		0,1,0,0,1,0,
+		0,0,1,0,1,0,
+		0,1,0,0,1,0,
+		0,1,1,1,0,0);
 
 	vector<Point2d *> firstpixelVec2;
 	vector<Point2d *> posVec2;
@@ -69,67 +82,75 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 
 
 	Point2d *firstB0;
-	Point2d firstC0;
+	//Point2d firstC0;
 
 
 	for (Point2d *ptr : firstpixelVec2)
 	{
 		vector<Point> obj;
-
+		currentDir = 0;
 		firstB0 = ptr;
 		//Check if bgX is not 0?
 		//c0 = Point2d(b0->x - 1, b0->y);
-		firstC0 = retrieveNextC(labeledImage, *firstB0);
+		//firstC0 = retrieveNextC(labeledImage, *firstB0);
+		bool looped = false;
+
+		Point2d b = Point2d(firstB0->x,firstB0->y);
+		obj.push_back(b);
+		while (!looped)
+		{
+			b = retrieveNextB(binaryImage, b);
+
+			int val = getEntryImage(binaryImage,b.x,b.y);
+
+			if (containsPoint(obj, b))
+			{
+				looped = true;
+			}
+			else
+			{
+				obj.push_back(b);
+			}
+
+			
+		}
+		contourVecVec.push_back(obj);
+
+		
 
 
 	}
+
+	imshow("labeled", labeledImage);
+
+	return 1;
+	
 	
 }
 
-Point2d retrieveNextC(Mat img, Point2d b)
+bool containsPoint(vector<Point> points, Point p)
 {
-	Point2d nextC;
-	switch (currentDir)
+	for (Point e : points)
 	{
-	case posC::LEFT:
-		if (img.at<int>(b.x, b.y - 1) == 1)
+		if (e.x == p.x && e.y == p.y)
 		{
-			currentDir++;
-		}
-		else
-		{
-			nextC = Point2d(b.x, b.y - 1);
-			break;
-		}
-	case posC::TOP:
-		if (img.at<int>(b.x+1, b.y) == 1)
-		{
-			currentDir++;
-		}
-		else
-		{
-			nextC = Point2d(b.x, b.y);
-			break;
+			return true;
 		}
 	}
-	
-	
-	if (currentDir != 3)
-		currentDir++;
-	else
-		currentDir = 0;
-
-
+	return false;
 }
 
 Point2d retrieveNextB(Mat img, Point2d b)
 {
-	Point2d nextB;
-	currentDir++;
+	Point2d nextB(0,0);
+	
+	uchar val;
+	Scalar colour;
 	switch (currentDir)
 	{
 	case posC::E:
-		if (img.at<int>(b.x-1, b.y) == 1)
+		val = getEntryImage(img, b.x - 1, b.y);
+		if (val==1)
 		{
 			nextB = Point2d(b.x-1, b.y );
 			break;
@@ -139,7 +160,8 @@ Point2d retrieveNextB(Mat img, Point2d b)
 			currentDir++;
 		}
 	case posC::NE:
-		if (img.at<int>(b.x-1, b.y - 1) == 1)
+		val = getEntryImage(img, b.x - 1, b.y-1);
+		if (val == 1)
 		{
 			nextB = Point2d(b.x-1, b.y - 1);
 			break;
@@ -150,7 +172,8 @@ Point2d retrieveNextB(Mat img, Point2d b)
 		}
 
 	case posC::N:
-		if (img.at<int>(b.x, b.y - 1) == 1)
+		val = getEntryImage(img, b.x, b.y-1);
+		if (val == 1)
 		{
 			nextB = Point2d(b.x, b.y - 1);
 			break;
@@ -161,7 +184,8 @@ Point2d retrieveNextB(Mat img, Point2d b)
 		}
 
 	case posC::NW:
-		if (img.at<int>(b.x+1, b.y - 1) == 1)
+		val = getEntryImage(img, b.x +1, b.y-1);
+		if (val==1)
 		{
 			nextB = Point2d(b.x+1, b.y - 1);
 			break;
@@ -171,7 +195,8 @@ Point2d retrieveNextB(Mat img, Point2d b)
 			currentDir++;
 		}
 	case posC::W:
-		if (img.at<int>(b.x+1, b.y) == 1)
+		val = getEntryImage(img, b.x + 1, b.y);
+		if (val==1)
 		{
 			nextB = Point2d(b.x+1, b.y);
 			break;
@@ -181,7 +206,8 @@ Point2d retrieveNextB(Mat img, Point2d b)
 			currentDir++;
 		}
 	case posC::SW:
-		if (img.at<int>(b.x+1, b.y + 1) == 1)
+		val = getEntryImage(img, b.x + 1, b.y-1);
+		if (val==1)
 		{
 			nextB = Point2d(b.x+1, b.y - 1);
 			break;
@@ -191,7 +217,8 @@ Point2d retrieveNextB(Mat img, Point2d b)
 			currentDir++;
 		}
 	case posC::S:
-		if (img.at<int>(b.x, b.y + 1) == 1)
+		val = getEntryImage(img, b.x, b.y+1);
+		if (val==1)
 		{
 			nextB = Point2d(b.x, b.y + 1);
 			break;
@@ -202,20 +229,21 @@ Point2d retrieveNextB(Mat img, Point2d b)
 			currentDir++;
 		}
 	case posC::SE:
-		if (img.at<int>(b.x-1, b.y + 1) == 1)
+		val = getEntryImage(img, b.x, b.y-1);
+		if (val==1)
 		{
 			nextB = Point2d(b.x, b.y - 1);
 			break;
 		}
 		else
 		{
-			return nullptr;
+			return NULL;
 		}
 	
 
 	}
 
-
+	return nextB;
 
 }
 
