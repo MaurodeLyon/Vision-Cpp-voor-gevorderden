@@ -13,15 +13,17 @@ using namespace cv;
 int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec);
 void findNextB(Mat img, Point p, vector<Point> vec);
 bool containsPoint(vector<Point> points, Point p);
-
+int currentDir = 0;
 
 Point getPoint(Point p, int dirNr);
 
 int getDirectionClosest(Mat img, Point p, int startDir = 0);
 
+Point2d *firstB0;
+
 int main() {
 
-	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/MooreV2/test.png", CV_LOAD_IMAGE_COLOR);
+	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/MooreV2/test2.png", CV_LOAD_IMAGE_COLOR);
 
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
@@ -84,14 +86,14 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 
 	std::cout << binaryImage << std::endl;
 
-	Point2d *firstB0;
+	
 	//Point2d firstC0;
 
 
 	for (Point2d *ptr : firstpixelVec2)
 	{
 		vector<Point> obj;
-		
+		currentDir = 0;
 		firstB0 = ptr;
 		//Check if bgX is not 0?
 		//c0 = Point2d(b0->x - 1, b0->y);
@@ -109,6 +111,8 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 	return 0;
 }
 
+///Recursive function that finds the next 'b' based on the given point
+///TODO correct 'c' tracking
 void findNextB(Mat img, Point p, vector<Point> vec)
 {
 	int nearest;
@@ -118,45 +122,62 @@ void findNextB(Mat img, Point p, vector<Point> vec)
 	//Point nextPoint(newX, newY);
 	int dir;
 	Point nextPoint;
-	int currentDir = 0;
+	//int currentDir = 0;
 	bool looping = true;
 
 	while (looping)
 	{
-
+		//Retrieves direction to new 'b', currentDir is always the last dir minus 1 (eg dir 7 means currentDir 6, 0 means 7 etc)
 		dir = getDirectionClosest(img, p,currentDir);
+		//Retrieves coords of new 'b'
 		nextPoint = getPoint(p, dir);
 
-		if (!containsPoint(vec, nextPoint))
+		//Checks if new point isnt already added and that dir has indeed found a 1 (-1 means an incorrect direction or none was found)
+		// a -1 or already added point prompts the statement below to cycle to the next direction and check again
+		if (!containsPoint(vec, nextPoint)&& dir!=-1)
 		{
+			//Stop while loop if new b is found
 			looping = false;
+			//Make sure currentDir doesnt go below 0
+			if(dir>0)
+				currentDir = dir-1;
+			/*if (currentDir < 0)
+			{
+				currentDir = 8 - currentDir;
+			}*/
+
 		}
 		else
 		{
-			if (!currentDir < 8)
+			if (currentDir < 7)
 				currentDir++;
 			else
 				currentDir = 0;
 		}
+		//Check if origin is reached, if so abort
+		if (nextPoint.x == firstB0->x&&nextPoint.y == firstB0->y)
+		{
+			return;
+		}
+
+		//if (dir == -1)
+			//currentDir = 0;
 	}
 
 
 	//Point nextPoint = getPoint(p, nearest);
 	
-
+	//TODO: remove this check, should not be needed as this is already being checked in the aforementioned while loop
 	if (!containsPoint(vec, nextPoint))
 	{
 		vec.push_back(nextPoint);
 		findNextB(img, nextPoint, vec);
 
 	}
-	else
-	{
-
-	}
+	
 	return;
 }
-
+///Because the == operator is not implemented for Mat objects this function is used.
 bool containsPoint(vector<Point> points, Point p)
 {
 	for (Point e : points)
@@ -168,7 +189,8 @@ bool containsPoint(vector<Point> points, Point p)
 	}
 	return false;
 }
-
+///Gets closest 1 by turning clockwise from starting position until its found
+///Returns -1 if no 1 was found in range.
 int getDirectionClosest(Mat img, Point p,int startDir)
 {
 	for (int i = startDir; i < 8; i++)
