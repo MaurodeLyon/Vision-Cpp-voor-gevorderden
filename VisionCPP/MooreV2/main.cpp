@@ -11,9 +11,10 @@ using namespace std;
 using namespace cv;
 
 int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec);
-void findNextB(Mat img, Point p, vector<Point> vec);
+void findNextB(Mat img, Point b, Point c, vector<Point> vec);
+int getDirNr(Point p, Point c);
 bool containsPoint(vector<Point> points, Point p);
-int currentDir = 0;
+//int currentDir = 0;
 
 Point getPoint(Point p, int dirNr);
 
@@ -23,7 +24,7 @@ Point2d *firstB0;
 
 int main() {
 
-	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/MooreV2/test2.png", CV_LOAD_IMAGE_COLOR);
+	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/MooreV2/test.png", CV_LOAD_IMAGE_COLOR);
 
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
@@ -93,7 +94,7 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 	for (Point2d *ptr : firstpixelVec2)
 	{
 		vector<Point> obj;
-		currentDir = 0;
+		//currentDir = 0;
 		firstB0 = ptr;
 		//Check if bgX is not 0?
 		//c0 = Point2d(b0->x - 1, b0->y);
@@ -102,8 +103,8 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 
 		Point2d b = Point(firstB0->x, firstB0->y);
 		obj.push_back(b);
-
-		findNextB(binaryImage, b, obj);
+		//TODO: This could fail if blob is at the edge of the image
+		findNextB(binaryImage, b, Point(b.x-1,b.y), obj);
 		
 
 	}
@@ -113,24 +114,25 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 
 ///Recursive function that finds the next 'b' based on the given point
 ///TODO correct 'c' tracking
-void findNextB(Mat img, Point p, vector<Point> vec)
+void findNextB(Mat img, Point b, Point c, vector<Point> vec)
 {
 	int nearest;
-	int newX = p.x;
-	int newY = p.y;
+	int newX = b.x;
+	int newY = b.y;
 	//findNext1(makeAdmin(img), newX, newY, nearest);
 	//Point nextPoint(newX, newY);
 	int dir;
 	Point nextPoint;
-	//int currentDir = 0;
+	//Find currentDirectionNumber based on point c, relative to the latest 'b'
+	int currentDir = getDirNr(b,c);
 	bool looping = true;
 
 	while (looping)
 	{
 		//Retrieves direction to new 'b', currentDir is always the last dir minus 1 (eg dir 7 means currentDir 6, 0 means 7 etc)
-		dir = getDirectionClosest(img, p,currentDir);
+		dir = getDirectionClosest(img, b,currentDir);
 		//Retrieves coords of new 'b'
-		nextPoint = getPoint(p, dir);
+		nextPoint = getPoint(b, dir);
 
 		//Checks if new point isnt already added and that dir has indeed found a 1 (-1 means an incorrect direction or none was found)
 		// a -1 or already added point prompts the statement below to cycle to the next direction and check again
@@ -170,8 +172,11 @@ void findNextB(Mat img, Point p, vector<Point> vec)
 	//TODO: remove this check, should not be needed as this is already being checked in the aforementioned while loop
 	if (!containsPoint(vec, nextPoint))
 	{
+		//Calculate the coords of the last 0 preceding nextPoint
+		Point newC = getPoint(b, currentDir);
+
 		vec.push_back(nextPoint);
-		findNextB(img, nextPoint, vec);
+		findNextB(img, nextPoint, newC, vec);
 
 	}
 	
@@ -204,6 +209,29 @@ int getDirectionClosest(Mat img, Point p,int startDir)
 		}
 	}
 	return -1;
+}
+
+int getDirNr(Point p, Point c)
+{
+	if (c.x == p.x - 1 && c.y == p.y)
+		return 0;
+	else if (c.x == p.x - 1 && c.y == p.y - 1)
+		return 1;
+	else if (c.x == p.x && c.y == p.y - 1)
+		return 2;
+	else if (c.x == p.x + 1 && c.y == p.y - 1)
+		return 3;
+	else if (c.x == p.x + 1 && c.y == p.y)
+		return 4;
+	else if (c.x == p.x + 1 && c.y == p.y + 1)
+		return 5;
+	else if (c.x == p.x && c.y == p.y + 1)
+		return 6;
+	else if (c.x == p.x - 1 && c.y == p.y + 1)
+		return 7;
+
+	return -1;
+	
 }
 
 Point getPoint(Point p, int dirNr)
