@@ -19,12 +19,13 @@ bool containsPoint(vector<Point> points, Point p);
 Point getPoint(Point p, int dirNr);
 
 int getDirectionClosest(Mat img, Point p, int startDir = 0);
+Mat contours;
 
 Point2d *firstB0;
 
 int main() {
 
-	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/MooreV2/test.png", CV_LOAD_IMAGE_COLOR);
+	Mat frame = imread("C:/Users/Arthur/Documents/SourceTree/Vision-Cpp-voor-gevorderden/VisionCPP/MooreV2/basisfiguren.jpg", CV_LOAD_IMAGE_COLOR);
 
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
@@ -49,16 +50,33 @@ int main() {
 
 	allContours(binary16S, *contourVecVec);
 
-	for (vector<Point> vec : *contourVecVec)
+	Mat test = Mat::zeros(frame.rows, frame.cols, CV_64F);
+	
+
+	contours = Mat(frame.rows,frame.cols,CV_64F);
+	contours = 0;
+	
+	//drawContours(test, *contourVecVec,-1, Scalar(128, 128, 128));
+	imshow("done",test);
+	/*for (vector<Point> vec : *contourVecVec)
 	{
 		for (Point e : vec)
 			circle(frame, e, 3, Scalar(128, 128, 128));
-	}
+	}*/
+
+	/*for (vector<Point> vec : *contourVecVec)
+	{
+		for (Point e : vec)
+			contours.at<uchar>(Point(e.y,e.x)) = 255;
+	}*/
+
+	imshow("testtesttest", contours);
 
 
-	waitKey(27);
+	
 	while (true)
 	{
+		waitKey(27);
 
 	}
 
@@ -85,7 +103,7 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 	vector<int> areaVec2;
 	labelBLOBsInfo(binaryImage, labeledImage, firstpixelVec2, posVec2, areaVec2);
 
-	std::cout << binaryImage << std::endl;
+	//std::cout << binaryImage << std::endl;
 
 	
 	//Point2d firstC0;
@@ -93,6 +111,18 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 
 	for (Point2d *ptr : firstpixelVec2)
 	{
+		std::cout << "------" << std::endl;
+		std::cout << "Point: " << ptr->x << " - " << ptr->y << std::endl;
+		std::cout << getEntryImage(binaryImage, ptr->x, ptr->y);
+		std::cout << "------" << std::endl;
+		
+		//To continue testing I had to exclude the last figure (due to one line thick figure, doesnt work as of now)
+		if (ptr->x == 284 && ptr->y == 161)
+		{
+			return -1;
+		}
+		
+
 		vector<Point> obj;
 		//currentDir = 0;
 		firstB0 = ptr;
@@ -100,12 +130,18 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 		//c0 = Point2d(b0->x - 1, b0->y);
 		//firstC0 = retrieveNextC(labeledImage, *firstB0);
 
-
-		Point2d b = Point(firstB0->x, firstB0->y);
+		// Switching x and y because Jan's conventions are unconventional
+		Point2d b = Point(firstB0->y, firstB0->x);
+		
+		std::cout << getEntryImage(binaryImage, b.y, b.x) << std::endl;
 		obj.push_back(b);
 		//TODO: This could fail if blob is at the edge of the image
+		
 		findNextB(binaryImage, b, Point(b.x-1,b.y), obj);
 		
+		contourVecVec.push_back(obj);
+
+		std::cout << "contour done" << std::endl;
 
 	}
 
@@ -141,8 +177,10 @@ void findNextB(Mat img, Point b, Point c, vector<Point> vec)
 			//Stop while loop if new b is found
 			looping = false;
 			//Make sure currentDir doesnt go below 0
-			if(dir>0)
-				currentDir = dir-1;
+			if (dir > 0)
+				currentDir = dir - 1;
+			else if (dir == 0)
+				currentDir = 7;
 			/*if (currentDir < 0)
 			{
 				currentDir = 8 - currentDir;
@@ -157,7 +195,7 @@ void findNextB(Mat img, Point b, Point c, vector<Point> vec)
 				currentDir = 0;
 		}
 		//Check if origin is reached, if so abort
-		if (nextPoint.x == firstB0->x&&nextPoint.y == firstB0->y)
+		if (nextPoint.x == firstB0->y&&nextPoint.y == firstB0->x)
 		{
 			return;
 		}
@@ -174,9 +212,12 @@ void findNextB(Mat img, Point b, Point c, vector<Point> vec)
 	{
 		//Calculate the coords of the last 0 preceding nextPoint
 		Point newC = getPoint(b, currentDir);
-
+		std::cout << "pointC: " << newC << std::endl;
+		std::cout << "pointB: " << nextPoint << std::endl;
 		vec.push_back(nextPoint);
+		//contours.at<uchar>(Point(nextPoint.y, nextPoint.x)) = 255;
 		findNextB(img, nextPoint, newC, vec);
+		
 
 	}
 	
