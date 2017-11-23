@@ -11,7 +11,7 @@ using namespace std;
 using namespace cv;
 
 int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec);
-void findNextB(Mat img, Point b, Point c, vector<Point> vec);
+void findNextB(Mat img, Point b, Point c, vector<Point> &vec);
 int getDirNr(Point p, Point c);
 bool containsPoint(vector<Point> points, Point p);
 //int currentDir = 0;
@@ -19,7 +19,7 @@ bool containsPoint(vector<Point> points, Point p);
 Point getPoint(Point p, int dirNr);
 
 int getDirectionClosest(Mat img, Point p, int startDir = 0);
-Mat contours;
+//Mat *contours;
 
 Point2d *firstB0;
 
@@ -53,7 +53,7 @@ int main() {
 	Mat test = Mat::zeros(frame.rows, frame.cols, CV_64F);
 	
 
-	contours = Mat(frame.rows,frame.cols,CV_64F);
+	Mat contours = binaryImage.clone();
 	contours = 0;
 	
 	//drawContours(test, *contourVecVec,-1, Scalar(128, 128, 128));
@@ -64,11 +64,11 @@ int main() {
 			circle(frame, e, 3, Scalar(128, 128, 128));
 	}*/
 
-	/*for (vector<Point> vec : *contourVecVec)
+	for (vector<Point> vec : *contourVecVec)
 	{
 		for (Point e : vec)
-			contours.at<uchar>(Point(e.y,e.x)) = 255;
-	}*/
+			contours.at<uchar>(Point(e.x,e.y)) = 255;
+	}
 
 	imshow("testtesttest", contours);
 
@@ -150,7 +150,7 @@ int allContours(Mat binaryImage, vector< vector<Point> > & contourVecVec)
 
 ///Recursive function that finds the next 'b' based on the given point
 ///TODO correct 'c' tracking
-void findNextB(Mat img, Point b, Point c, vector<Point> vec)
+void findNextB(Mat img, Point b, Point c, vector<Point> &vec)
 {
 	int nearest;
 	int newX = b.x;
