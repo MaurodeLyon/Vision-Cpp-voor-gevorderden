@@ -16,7 +16,7 @@ int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 Point getDirectionPoint(Point p, int direction_number);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
-double bendingEnergy(Mat image_binary, vector<Point>& contour);
+double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
 
 int main()
 {
@@ -186,60 +186,26 @@ Point getDirectionPoint(Point p, int direction_number)
 		return Point(-1, -1);
 	}
 }
-
-double bendingEnergy(Mat binaryImage, vector<Point>& contourVec)
+/*
+ * calculates the bending energy
+ */
+double bendingEnergy(Mat image_binary, vector<Point>& contour)
 {
-	//Resolution scaling, seems to go out of bounds even though parameters suggest otherwise?
-
-	/*Mat microImg = Mat::zeros(image_binary.rows/10, image_binary.cols/10, CV_8U);
-	for (int rows = 0; rows < image_binary.rows; rows+=10)
-	{
-	for (int cols = 0; cols < image_binary.cols; cols+=10)
-	{
-	vector<int> pixels;
-	for (int blockY = 0; blockY < 10; blockY++)
-	{
-	for (int blockX = 0; blockX < 10; blockX++)
-	{
-	if(image_binary.rows>(rows+blockY) && image_binary.cols>(cols+blockX))
-	pixels.push_back(getEntryImage(image_binary, rows+blockY, cols+blockX));
-	}
-	}
-
-	int sum = 0;
-	for (int pix : pixels)
-	{
-	sum += pix;
-	}
-	int answer = sum / pixels.size();
-	if(answer < 255)
-	microImg.at<uchar>(Point(rows/10, cols/10))=answer;
-	else
-	microImg.at<uchar>(Point(rows / 10, cols / 10)) = 255;
-	}
-	}
-	imshow("immabetesting", microImg);*/
-
 	vector<int> chainCode;
-	for (int i = 0; i < contourVec.size(); i++)
+	for (int i = 0; i < contour.size(); i++)
 	{
-		if (i + 1 < contourVec.size())
-			chainCode.push_back(getDirectionNumber(contourVec[i], contourVec[i + 1]));
+		if (i + 1 < contour.size())
+			chainCode.push_back(getDirectionNumber(contour[i], contour[i + 1]));
 		else
-			chainCode.push_back(getDirectionNumber(contourVec[i], contourVec[0]));
+			chainCode.push_back(getDirectionNumber(contour[i], contour[0]));
 	}
 	double bendingSum = 0;
 	for (int i = 1; i < chainCode.size(); i++)
 	{
-		if (i + 1 < contourVec.size())
-		{
+		if (i + 1 < contour.size())
 			bendingSum += abs(chainCode[i] - chainCode[i - 1]);
-		}
-
 		else
-		{
 			bendingSum += abs(chainCode[i] - chainCode[0]);
-		}
 	}
 	return bendingSum;
 }
