@@ -303,3 +303,4 @@ __pycache__/
 
 # OpenCover UI analysis results
 OpenCover/
+VisionCPP/Moore/opencv_world330d.dll
