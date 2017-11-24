@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include <opencv2/objdetect.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -10,19 +9,13 @@
 using namespace std;
 using namespace cv;
 
-int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec);
-void findNextB(Mat img, Point b, Point c, vector<Point>& vec);
+int allContours(Mat image_binary, vector<vector<Point>>& contours);
+void findNextB(Mat image, Point b, Point c, vector<Point>& contour);
 int getDirNr(Point p, Point c);
-bool containsPoint(vector<Point> points, Point p);
-//int currentDir = 0;
-
+bool containsPoint(vector<Point> contour, Point p);
 Point getPoint(Point p, int dirNr);
-
 int getDirectionClosest(Mat img, Point p, int startDir = 0);
-//Mat *contours;
-
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
-
 
 Point2d* firstB0;
 
@@ -63,10 +56,10 @@ int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec)
 
 	for (Point2d* ptr : firstpixelVec2)
 	{
-		std::cout << "------" << std::endl;
-		std::cout << "Point: " << ptr->x << " - " << ptr->y << std::endl;
-		std::cout << getEntryImage(binaryImage, ptr->x, ptr->y);
-		std::cout << "------" << std::endl;
+		cout << "------" << endl;
+		cout << "Point: " << ptr->x << " - " << ptr->y << endl;
+		cout << getEntryImage(binaryImage, ptr->x, ptr->y);
+		cout << "------" << endl;
 
 		//To continue testing I had to exclude the last figure (due to one line thick figure, doesnt work as of now)
 		if (ptr->x == 284 && ptr->y == 161)
@@ -75,31 +68,31 @@ int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec)
 		}
 		vector<Point> obj;
 		firstB0 = ptr;
-		
+
 		// Switching x and y because Jan's conventions are unconventional
 		Point2d b = Point(firstB0->y, firstB0->x);
-		std::cout << getEntryImage(binaryImage, b.y, b.x) << std::endl;
+		cout << getEntryImage(binaryImage, b.y, b.x) << endl;
 		obj.push_back(b);
-				findNextB(binaryImage, b, Point(b.x - 1, b.y), obj);
+		findNextB(binaryImage, b, Point(b.x - 1, b.y), obj);
 		contourVecVec.push_back(obj);
-				std::cout << "contour done" << std::endl;
+		cout << "contour done" << endl;
 	}
-		return 0;
+	return 0;
 }
 
-///Recursive function that finds the next 'b' based on the given point
-///TODO correct 'c' tracking
+//Recursive function that finds the next 'b' based on the given point
+//TODO correct 'c' tracking
 void findNextB(Mat img, Point b, Point c, vector<Point>& vec)
 {
 	Point nextPoint;
 	//Find currentDirectionNumber based on point c, relative to the latest 'b'
 	int currentDir = getDirNr(b, c);
 	bool looping = true;
-
 	while (looping)
 	{
 		//Retrieves direction to new 'b', currentDir is always the last dir minus 1 (eg dir 7 means currentDir 6, 0 means 7 etc)
 		int dir = getDirectionClosest(img, b, currentDir);
+
 		//Retrieves coords of new 'b'
 		nextPoint = getPoint(b, dir);
 
@@ -114,10 +107,6 @@ void findNextB(Mat img, Point b, Point c, vector<Point>& vec)
 				currentDir = dir - 1;
 			else if (dir == 0)
 				currentDir = 7;
-			/*if (currentDir < 0)
-			{
-			currentDir = 8 - currentDir;
-			}*/
 		}
 		else
 		{
@@ -131,30 +120,21 @@ void findNextB(Mat img, Point b, Point c, vector<Point>& vec)
 		{
 			return;
 		}
-
-		//if (dir == -1)
-		//currentDir = 0;
 	}
-
-
-	//Point nextPoint = getPoint(p, nearest);
 
 	//TODO: remove this check, should not be needed as this is already being checked in the aforementioned while loop
 	if (!containsPoint(vec, nextPoint))
 	{
 		//Calculate the coords of the last 0 preceding nextPoint
 		Point newC = getPoint(b, currentDir);
-		std::cout << "pointC: " << newC << std::endl;
-		std::cout << "pointB: " << nextPoint << std::endl;
+		cout << "pointC: " << newC << endl;
+		cout << "pointB: " << nextPoint << endl;
 		vec.push_back(nextPoint);
-		//contours.at<uchar>(Point(nextPoint.y, nextPoint.x)) = 255;
 		findNextB(img, nextPoint, newC, vec);
 	}
-
-	return;
 }
 
-///Because the == operator is not implemented for Mat objects this function is used.
+//Because the == operator is not implemented for Mat objects this function is used.
 bool containsPoint(vector<Point> points, Point p)
 {
 	for (Point e : points)
@@ -167,8 +147,8 @@ bool containsPoint(vector<Point> points, Point p)
 	return false;
 }
 
-///Gets closest 1 by turning clockwise from starting position until its found
-///Returns -1 if no 1 was found in range.
+//Gets closest 1 by turning clockwise from starting position until its found
+//Returns -1 if no 1 was found in range.
 int getDirectionClosest(Mat img, Point p, int startDir)
 {
 	for (int i = startDir; i < 8; i++)
@@ -187,19 +167,19 @@ int getDirNr(Point p, Point c)
 {
 	if (c.x == p.x - 1 && c.y == p.y)
 		return 0;
-	else if (c.x == p.x - 1 && c.y == p.y - 1)
+	if (c.x == p.x - 1 && c.y == p.y - 1)
 		return 1;
-	else if (c.x == p.x && c.y == p.y - 1)
+	if (c.x == p.x && c.y == p.y - 1)
 		return 2;
-	else if (c.x == p.x + 1 && c.y == p.y - 1)
+	if (c.x == p.x + 1 && c.y == p.y - 1)
 		return 3;
-	else if (c.x == p.x + 1 && c.y == p.y)
+	if (c.x == p.x + 1 && c.y == p.y)
 		return 4;
-	else if (c.x == p.x + 1 && c.y == p.y + 1)
+	if (c.x == p.x + 1 && c.y == p.y + 1)
 		return 5;
-	else if (c.x == p.x && c.y == p.y + 1)
+	if (c.x == p.x && c.y == p.y + 1)
 		return 6;
-	else if (c.x == p.x - 1 && c.y == p.y + 1)
+	if (c.x == p.x - 1 && c.y == p.y + 1)
 		return 7;
 
 	return -1;
@@ -243,18 +223,18 @@ double bendingEnergy(Mat binaryImage, vector<Point>& contourVec)
 {
 	//Resolution scaling, seems to go out of bounds even though parameters suggest otherwise?
 
-	/*Mat microImg = Mat::zeros(binaryImage.rows/10, binaryImage.cols/10, CV_8U);
-	for (int rows = 0; rows < binaryImage.rows; rows+=10)
+	/*Mat microImg = Mat::zeros(image_binary.rows/10, image_binary.cols/10, CV_8U);
+	for (int rows = 0; rows < image_binary.rows; rows+=10)
 	{
-	for (int cols = 0; cols < binaryImage.cols; cols+=10)
+	for (int cols = 0; cols < image_binary.cols; cols+=10)
 	{
 	vector<int> pixels;
 	for (int blockY = 0; blockY < 10; blockY++)
 	{
 	for (int blockX = 0; blockX < 10; blockX++)
 	{
-	if(binaryImage.rows>(rows+blockY) && binaryImage.cols>(cols+blockX))
-	pixels.push_back(getEntryImage(binaryImage, rows+blockY, cols+blockX));
+	if(image_binary.rows>(rows+blockY) && image_binary.cols>(cols+blockX))
+	pixels.push_back(getEntryImage(image_binary, rows+blockY, cols+blockX));
 	}
 	}
 
@@ -273,7 +253,6 @@ double bendingEnergy(Mat binaryImage, vector<Point>& contourVec)
 	imshow("immabetesting", microImg);*/
 
 	vector<int> chainCode;
-	//vector<int> bendingEnergy;
 	for (int i = 0; i < contourVec.size(); i++)
 	{
 		if (i + 1 < contourVec.size())
@@ -287,17 +266,12 @@ double bendingEnergy(Mat binaryImage, vector<Point>& contourVec)
 		if (i + 1 < contourVec.size())
 		{
 			bendingSum += abs(chainCode[i] - chainCode[i - 1]);
-			//bendingEnergy.push_back(chainCode[i] - chainCode[i - 1]);
 		}
 
 		else
 		{
 			bendingSum += abs(chainCode[i] - chainCode[0]);
-			//bendingEnergy.push_back(chainCode[i] - chainCode[0]);
 		}
 	}
-
-	//double answer = bendingSum / (double)bendingEnergy.size();
-
 	return bendingSum;
 }
