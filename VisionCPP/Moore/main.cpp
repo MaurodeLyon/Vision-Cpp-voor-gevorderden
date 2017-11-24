@@ -9,15 +9,13 @@
 using namespace std;
 using namespace cv;
 
-int allContours(Mat image_binary, vector<vector<Point>>& contours);
-void findNextB(Mat image, Point b, Point c, vector<Point>& contour);
-int getDirNr(Point p, Point c);
+int getContours(Mat image_binary, vector<vector<Point>>& contours);
+void findNextContourPixel(Mat image_binary, Point b, Point c, vector<Point>& contour, Point2d* origin);
+int getDirectionNumber(Point p1, Point p2);
 bool containsPoint(vector<Point> contour, Point p);
-Point getPoint(Point p, int dirNr);
-int getDirectionClosest(Mat img, Point p, int startDir = 0);
-double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
-
-Point2d* firstB0;
+Point getDirectionPoint(Point p, int direction_number);
+int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
+double bendingEnergy(Mat image_binary, vector<Point>& contour);
 
 int main()
 {
@@ -41,96 +39,105 @@ int main()
 	waitKey(0);
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContours(image_binary16S, *contours);
+	getContours(image_binary16S, *contours);
 	waitKey(0);
 }
 
-int allContours(Mat image_binary, vector<vector<Point>>& contours)
+/*
+ * finds all contours in an image_binary
+ */
+int getContours(Mat image_binary, vector<vector<Point>>& contours)
 {
-	Mat labeledImage;
-	Mat C = (Mat_<double>(3, 3) << 0 , -1 , 0 , -1 , 5 , -1 , 0 , -1 , 0);
-	vector<Point2d *> firstpixelVec2;
-	vector<Point2d *> posVec2;
-	vector<int> areaVec2;
-	labelBLOBsInfo(image_binary, labeledImage, firstpixelVec2, posVec2, areaVec2);
+	Mat image_labled;
+	vector<Point2d *> firstPixels;
+	vector<Point2d *> centers;
+	vector<int> areas;
+	labelBLOBsInfo(image_binary, image_labled, firstPixels, centers, areas);
 
-	for (Point2d* ptr : firstpixelVec2)
+	for (Point2d* firstPixel : firstPixels)
 	{
-		cout << "------" << endl;
-		cout << "Point: " << ptr->x << " - " << ptr->y << endl;
-		cout << getEntryImage(image_binary, ptr->x, ptr->y);
-		cout << "------" << endl;
+		cout << "Getting contour for figure with first pixel ["
+			<< firstPixel->x << "," << firstPixel->y << "] = " << getEntryImage(image_binary, firstPixel->x, firstPixel->y)
+			<< endl;
 
 		//To continue testing I had to exclude the last figure (due to one line thick figure, doesnt work as of now)
-		if (ptr->x == 284 && ptr->y == 161)
+		//TODO: fix this problem
+		if (firstPixel->x == 284 && firstPixel->y == 161)
 		{
 			return -1;
 		}
-		vector<Point> obj;
-		firstB0 = ptr;
 
-		// Switching x and y because Jan's conventions are unconventional
-		Point2d b = Point(firstB0->y, firstB0->x);
-		cout << getEntryImage(image_binary, b.y, b.x) << endl;
-		obj.push_back(b);
-		findNextB(image_binary, b, Point(b.x - 1, b.y), obj);
-		contours.push_back(obj);
+		// Start creating vector which will contain the contour
+		vector<Point> contour;
+		Point2d starting_pixel = Point(firstPixel->y, firstPixel->x);
+		contour.push_back(starting_pixel);
+		findNextContourPixel(image_binary, starting_pixel, Point(starting_pixel.x - 1, starting_pixel.y), contour,
+		                     firstPixel);
+		contours.push_back(contour);
 		cout << "contour done" << endl;
 	}
 	return 0;
 }
 
 //Recursive function that finds the next 'b' based on the given point
-//TODO correct 'c' tracking
-void findNextB(Mat image, Point b, Point c, vector<Point>& contour)
+//TODO correct 'p2' tracking
+void findNextContourPixel(Mat image, Point b, Point c, vector<Point>& contour, Point2d* origin)
 {
-	Point nextPoint;
-	//Find currentDirectionNumber based on point c, relative to the latest 'b'
-	int currentDir = getDirNr(b, c);
+	do
+	{
+	}
+	while (!(b.x == origin->x && b.y == origin->y));
+
+
+	Point next_point;
+
+	//Find currentDirectionNumber based on point p2, relative to the latest 'b'
+	int current_direction = getDirectionNumber(b, c);
+
 	bool looping = true;
 	while (looping)
 	{
 		//Retrieves direction to new 'b', currentDir is always the last dir minus 1 (eg dir 7 means currentDir 6, 0 means 7 etc)
-		int dir = getDirectionClosest(image, b, currentDir);
+		int new_direction = getDirectionClosest(image, b, current_direction);
 
 		//Retrieves coords of new 'b'
-		nextPoint = getPoint(b, dir);
+		next_point = getDirectionPoint(b, new_direction);
 
 		//Checks if new point isnt already added and that dir has indeed found a 1 (-1 means an incorrect direction or none was found)
 		// a -1 or already added point prompts the statement below to cycle to the next direction and check again
-		if (!containsPoint(contour, nextPoint) && dir != -1)
+		if (!containsPoint(contour, next_point) && new_direction != -1)
 		{
 			//Stop while loop if new b is found
 			looping = false;
 			//Make sure currentDir doesnt go below 0
-			if (dir > 0)
-				currentDir = dir - 1;
-			else if (dir == 0)
-				currentDir = 7;
+			if (new_direction > 0)
+				current_direction = new_direction - 1;
+			else if (new_direction == 0)
+				current_direction = 7;
 		}
 		else
 		{
-			if (currentDir < 7)
-				currentDir++;
+			if (current_direction < 7)
+				current_direction++;
 			else
-				currentDir = 0;
+				current_direction = 0;
 		}
 		//Check if origin is reached, if so abort
-		if (nextPoint.x == firstB0->y && nextPoint.y == firstB0->x)
+		if (next_point.x == origin->y && next_point.y == origin->x)
 		{
 			return;
 		}
 	}
 
 	//TODO: remove this check, should not be needed as this is already being checked in the aforementioned while loop
-	if (!containsPoint(contour, nextPoint))
+	if (!containsPoint(contour, next_point))
 	{
 		//Calculate the coords of the last 0 preceding nextPoint
-		Point newC = getPoint(b, currentDir);
+		Point newC = getDirectionPoint(b, current_direction);
 		cout << "pointC: " << newC << endl;
-		cout << "pointB: " << nextPoint << endl;
-		contour.push_back(nextPoint);
-		findNextB(image, nextPoint, newC, contour);
+		cout << "pointB: " << next_point << endl;
+		contour.push_back(next_point);
+		findNextContourPixel(image, next_point, newC, contour, origin);
 	}
 }
 
@@ -150,14 +157,14 @@ bool containsPoint(vector<Point> contour, Point point)
 }
 
 /*
- * Turns clockwise around a point in a binary image to find a 1 based on a starting direction
+ * Turns clockwise around a point in a binary image_binary to find a 1 based on a starting direction
  * returns -1 if no 1 was found in range
  */
 int getDirectionClosest(Mat binary_image, Point point, int staring_direction)
 {
 	for (int i = staring_direction; i < 8; i++)
 	{
-		Point newPoint = getPoint(point, i);
+		Point newPoint = getDirectionPoint(point, i);
 		if (getEntryImage(binary_image, newPoint.y, newPoint.x) == 1)
 		{
 			return i;
@@ -169,27 +176,27 @@ int getDirectionClosest(Mat binary_image, Point point, int staring_direction)
 /*
  * returns a direction number based on 2 points
  *    1 2 3
- *    0 p 4
+ *    0 p1 4
  *    7 6 5
  * returns -1 if points are incorrect
  */
-int getDirNr(Point p, Point c)
+int getDirectionNumber(Point p1, Point p2)
 {
-	if (c.x == p.x - 1 && c.y == p.y)
+	if (p2.x == p1.x - 1 && p2.y == p1.y)
 		return 0;
-	if (c.x == p.x - 1 && c.y == p.y - 1)
+	if (p2.x == p1.x - 1 && p2.y == p1.y - 1)
 		return 1;
-	if (c.x == p.x && c.y == p.y - 1)
+	if (p2.x == p1.x && p2.y == p1.y - 1)
 		return 2;
-	if (c.x == p.x + 1 && c.y == p.y - 1)
+	if (p2.x == p1.x + 1 && p2.y == p1.y - 1)
 		return 3;
-	if (c.x == p.x + 1 && c.y == p.y)
+	if (p2.x == p1.x + 1 && p2.y == p1.y)
 		return 4;
-	if (c.x == p.x + 1 && c.y == p.y + 1)
+	if (p2.x == p1.x + 1 && p2.y == p1.y + 1)
 		return 5;
-	if (c.x == p.x && c.y == p.y + 1)
+	if (p2.x == p1.x && p2.y == p1.y + 1)
 		return 6;
-	if (c.x == p.x - 1 && c.y == p.y + 1)
+	if (p2.x == p1.x - 1 && p2.y == p1.y + 1)
 		return 7;
 
 	return -1;
@@ -198,11 +205,11 @@ int getDirNr(Point p, Point c)
 /*
  * returns a new point based on a current point and a direction
  *    1 2 3
- *    0 p 4
+ *    0 p1 4
  *    7 6 5
  * returns Point(-1,-1) if a incorrect direction is supplied
  */
-Point getPoint(Point p, int direction_number)
+Point getDirectionPoint(Point p, int direction_number)
 {
 	switch (direction_number)
 	{
@@ -264,9 +271,9 @@ double bendingEnergy(Mat binaryImage, vector<Point>& contourVec)
 	for (int i = 0; i < contourVec.size(); i++)
 	{
 		if (i + 1 < contourVec.size())
-			chainCode.push_back(getDirNr(contourVec[i], contourVec[i + 1]));
+			chainCode.push_back(getDirectionNumber(contourVec[i], contourVec[i + 1]));
 		else
-			chainCode.push_back(getDirNr(contourVec[i], contourVec[0]));
+			chainCode.push_back(getDirectionNumber(contourVec[i], contourVec[0]));
 	}
 	double bendingSum = 0;
 	for (int i = 1; i < chainCode.size(); i++)
