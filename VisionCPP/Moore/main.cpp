@@ -7,6 +7,7 @@
 using namespace std;
 using namespace cv;
 
+double bendingEnergy(Mat binaryImage, vector<Point>& contour);
 void findNextB(Mat image, Point b, Point c, vector<Point> vec);
 int allContours(Mat image_binary, vector<vector<Point>>& contours);
 int getDirNr(Point p, Point c);
@@ -28,19 +29,17 @@ int main()
 	waitKey(0);
 
 	Mat image_binary;
-	Mat image_binary16S;
-	vector<vector<Point>>* contours = new vector<vector<Point>>();
 	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
-	image_binary.convertTo(image_binary16S, CV_16S);
-	allContours(image_binary16S, *contours);
+	imshow("Binary", image_binary);
 	waitKey(0);
 
-	Mat image_binary16s_show;
-	Mat image_binary_show;
-	threshold(image_gray, image_binary_show, 200, 200, CV_THRESH_BINARY_INV);
-	image_binary_show.convertTo(image_binary16s_show, CV_16S);
-	imshow("threshold", image_binary_show);
-	imshow("binary", image_binary16s_show);
+	Mat image_binary16S;
+	image_binary.convertTo(image_binary16S, CV_16S);
+	show16SImageStretch(image_binary16S, "Binary 16S");
+	waitKey(0);
+
+	vector<vector<Point>>* contours = new vector<vector<Point>>();
+	allContours(image_binary16S, *contours);
 	waitKey(0);
 }
 
@@ -55,7 +54,7 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 	{
 		cout << "------" << endl;
 		cout << "Point: " << first_pixel_point->x << " - " << first_pixel_point->y << endl;
-		cout << getEntryImage(image_binary, first_pixel_point->x, first_pixel_point->y);
+		cout << getEntryImage(image_binary, first_pixel_point->x, first_pixel_point->y) << endl;
 		cout << "------" << endl;
 
 		//To continue testing I had to exclude the last figure (due to one line thick figure, doesnt work as of now)
@@ -76,6 +75,14 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 		cout << "contour done" << endl;
 	}
 	return 0;
+}
+
+double bendingEnergy(Mat binaryImage, vector<Point>& contour)
+{
+	double bending_energy = 0;
+
+
+	return bending_energy;
 }
 
 //Recursive function that finds the next 'b' based on the given point
