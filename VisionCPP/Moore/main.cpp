@@ -79,16 +79,12 @@ int getContours(Mat image_binary, vector<vector<Point>>& contours)
 	return 0;
 }
 
-//Recursive function that finds the next 'b' based on the given point
-//TODO correct 'p2' tracking
+/*
+ * Recursive functions that looks for the next pixel 
+ * it does this until it finds its way back to the origin
+ */
 void findNextContourPixel(Mat image, Point b, Point c, vector<Point>& contour, Point2d* origin)
 {
-	do
-	{
-	}
-	while (!(b.x == origin->x && b.y == origin->y));
-
-
 	Point next_point;
 
 	//Find currentDirectionNumber based on point p2, relative to the latest 'b'
