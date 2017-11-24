@@ -45,20 +45,20 @@ int main()
 	waitKey(0);
 }
 
-int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec)
+int allContours(Mat image_binary, vector<vector<Point>>& contours)
 {
 	Mat labeledImage;
 	Mat C = (Mat_<double>(3, 3) << 0 , -1 , 0 , -1 , 5 , -1 , 0 , -1 , 0);
 	vector<Point2d *> firstpixelVec2;
 	vector<Point2d *> posVec2;
 	vector<int> areaVec2;
-	labelBLOBsInfo(binaryImage, labeledImage, firstpixelVec2, posVec2, areaVec2);
+	labelBLOBsInfo(image_binary, labeledImage, firstpixelVec2, posVec2, areaVec2);
 
 	for (Point2d* ptr : firstpixelVec2)
 	{
 		cout << "------" << endl;
 		cout << "Point: " << ptr->x << " - " << ptr->y << endl;
-		cout << getEntryImage(binaryImage, ptr->x, ptr->y);
+		cout << getEntryImage(image_binary, ptr->x, ptr->y);
 		cout << "------" << endl;
 
 		//To continue testing I had to exclude the last figure (due to one line thick figure, doesnt work as of now)
@@ -71,10 +71,10 @@ int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec)
 
 		// Switching x and y because Jan's conventions are unconventional
 		Point2d b = Point(firstB0->y, firstB0->x);
-		cout << getEntryImage(binaryImage, b.y, b.x) << endl;
+		cout << getEntryImage(image_binary, b.y, b.x) << endl;
 		obj.push_back(b);
-		findNextB(binaryImage, b, Point(b.x - 1, b.y), obj);
-		contourVecVec.push_back(obj);
+		findNextB(image_binary, b, Point(b.x - 1, b.y), obj);
+		contours.push_back(obj);
 		cout << "contour done" << endl;
 	}
 	return 0;
@@ -82,7 +82,7 @@ int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec)
 
 //Recursive function that finds the next 'b' based on the given point
 //TODO correct 'c' tracking
-void findNextB(Mat img, Point b, Point c, vector<Point>& vec)
+void findNextB(Mat image, Point b, Point c, vector<Point>& contour)
 {
 	Point nextPoint;
 	//Find currentDirectionNumber based on point c, relative to the latest 'b'
@@ -91,14 +91,14 @@ void findNextB(Mat img, Point b, Point c, vector<Point>& vec)
 	while (looping)
 	{
 		//Retrieves direction to new 'b', currentDir is always the last dir minus 1 (eg dir 7 means currentDir 6, 0 means 7 etc)
-		int dir = getDirectionClosest(img, b, currentDir);
+		int dir = getDirectionClosest(image, b, currentDir);
 
 		//Retrieves coords of new 'b'
 		nextPoint = getPoint(b, dir);
 
 		//Checks if new point isnt already added and that dir has indeed found a 1 (-1 means an incorrect direction or none was found)
 		// a -1 or already added point prompts the statement below to cycle to the next direction and check again
-		if (!containsPoint(vec, nextPoint) && dir != -1)
+		if (!containsPoint(contour, nextPoint) && dir != -1)
 		{
 			//Stop while loop if new b is found
 			looping = false;
@@ -123,23 +123,25 @@ void findNextB(Mat img, Point b, Point c, vector<Point>& vec)
 	}
 
 	//TODO: remove this check, should not be needed as this is already being checked in the aforementioned while loop
-	if (!containsPoint(vec, nextPoint))
+	if (!containsPoint(contour, nextPoint))
 	{
 		//Calculate the coords of the last 0 preceding nextPoint
 		Point newC = getPoint(b, currentDir);
 		cout << "pointC: " << newC << endl;
 		cout << "pointB: " << nextPoint << endl;
-		vec.push_back(nextPoint);
-		findNextB(img, nextPoint, newC, vec);
+		contour.push_back(nextPoint);
+		findNextB(image, nextPoint, newC, contour);
 	}
 }
 
-//Because the == operator is not implemented for Mat objects this function is used.
-bool containsPoint(vector<Point> points, Point p)
+/*
+ * Checks if a contour contains a point
+ */
+bool containsPoint(vector<Point> contour, Point point)
 {
-	for (Point e : points)
+	for (Point p : contour)
 	{
-		if (e.x == p.x && e.y == p.y)
+		if (p.x == point.x && p.y == point.y)
 		{
 			return true;
 		}
@@ -147,15 +149,16 @@ bool containsPoint(vector<Point> points, Point p)
 	return false;
 }
 
-//Gets closest 1 by turning clockwise from starting position until its found
-//Returns -1 if no 1 was found in range.
-int getDirectionClosest(Mat img, Point p, int startDir)
+/*
+ * Turns clockwise around a point in a binary image to find a 1 based on a starting direction
+ * returns -1 if no 1 was found in range
+ */
+int getDirectionClosest(Mat binary_image, Point point, int staring_direction)
 {
-	for (int i = startDir; i < 8; i++)
+	for (int i = staring_direction; i < 8; i++)
 	{
-		Point newPoint = getPoint(p, i);
-		int val = getEntryImage(img, newPoint.y, newPoint.x);
-		if (val == 1)
+		Point newPoint = getPoint(point, i);
+		if (getEntryImage(binary_image, newPoint.y, newPoint.x) == 1)
 		{
 			return i;
 		}
@@ -163,6 +166,13 @@ int getDirectionClosest(Mat img, Point p, int startDir)
 	return -1;
 }
 
+/*
+ * returns a direction number based on 2 points
+ *    1 2 3
+ *    0 p 4
+ *    7 6 5
+ * returns -1 if points are incorrect
+ */
 int getDirNr(Point p, Point c)
 {
 	if (c.x == p.x - 1 && c.y == p.y)
@@ -185,38 +195,36 @@ int getDirNr(Point p, Point c)
 	return -1;
 }
 
-Point getPoint(Point p, int dirNr)
+/*
+ * returns a new point based on a current point and a direction
+ *    1 2 3
+ *    0 p 4
+ *    7 6 5
+ * returns Point(-1,-1) if a incorrect direction is supplied
+ */
+Point getPoint(Point p, int direction_number)
 {
-	Point newPoint(0, 0);
-	switch (dirNr)
+	switch (direction_number)
 	{
 	case 0:
-		newPoint = Point(p.x - 1, p.y);
-		break;
+		return Point(p.x - 1, p.y);
 	case 1:
-		newPoint = Point(p.x - 1, p.y - 1);
-		break;
+		return Point(p.x - 1, p.y - 1);
 	case 2:
-		newPoint = Point(p.x, p.y - 1);
-		break;
+		return Point(p.x, p.y - 1);
 	case 3:
-		newPoint = Point(p.x + 1, p.y - 1);
-		break;
+		return Point(p.x + 1, p.y - 1);
 	case 4:
-		newPoint = Point(p.x + 1, p.y);
-		break;
+		return Point(p.x + 1, p.y);
 	case 5:
-		newPoint = Point(p.x + 1, p.y + 1);
-		break;
+		return Point(p.x + 1, p.y + 1);
 	case 6:
-		newPoint = Point(p.x, p.y + 1);
-		break;
+		return Point(p.x, p.y + 1);
 	case 7:
-		newPoint = Point(p.x - 1, p.y + 1);
-		break;
+		return Point(p.x - 1, p.y + 1);
+	default:
+		return Point(-1, -1);
 	}
-
-	return newPoint;
 }
 
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec)
