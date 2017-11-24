@@ -21,6 +21,9 @@ Point getPoint(Point p, int dirNr);
 int getDirectionClosest(Mat img, Point p, int startDir = 0);
 //Mat *contours;
 
+double bendingEnergy(Mat binaryImage, vector<Point> & contourVec);
+
+
 Point2d *firstB0;
 
 int main() {
@@ -72,6 +75,8 @@ int main() {
 
 	imshow("testtesttest", contours);
 
+
+	bendingEnergy(binary16S, contourVecVec->at(0));
 
 	
 	while (true)
@@ -308,6 +313,76 @@ Point getPoint(Point p, int dirNr)
 	}
 
 	return newPoint;
+}
+
+double bendingEnergy(Mat binaryImage, vector<Point> & contourVec)
+{
+	//Resolution scaling, seems to go out of bounds even though parameters suggest otherwise?
+
+	/*Mat microImg = Mat::zeros(binaryImage.rows/10, binaryImage.cols/10, CV_8U);
+
+	for (int rows = 0; rows < binaryImage.rows; rows+=10)
+	{
+		for (int cols = 0; cols < binaryImage.cols; cols+=10)
+		{
+			vector<int> pixels;
+			for (int blockY = 0; blockY < 10; blockY++)
+			{
+				for (int blockX = 0; blockX < 10; blockX++)
+				{
+					if(binaryImage.rows>(rows+blockY) && binaryImage.cols>(cols+blockX))
+						pixels.push_back(getEntryImage(binaryImage, rows+blockY, cols+blockX));
+				}
+			}
+			
+			int sum = 0;
+			for (int pix : pixels)
+			{
+				sum += pix;
+			}
+
+			int answer = sum / pixels.size();
+			if(answer < 255)
+			microImg.at<uchar>(Point(rows/10, cols/10))=answer;
+			else
+				microImg.at<uchar>(Point(rows / 10, cols / 10)) = 255;
+		}
+	}
+	imshow("immabetesting", microImg);*/
+
+	vector<int> chainCode;
+	//vector<int> bendingEnergy;
+	for (int i = 0; i < contourVec.size(); i++)
+	{
+		if (i + 1 < contourVec.size())
+			chainCode.push_back(getDirNr(contourVec[i], contourVec[i + 1]));
+		else
+			chainCode.push_back(getDirNr(contourVec[i], contourVec[0]));
+	}
+	double bendingSum = 0;
+	for (int i = 1; i < chainCode.size(); i++)
+	{
+		if (i + 1 < contourVec.size())
+		{
+			bendingSum += abs(chainCode[i] - chainCode[i - 1]);
+			//bendingEnergy.push_back(chainCode[i] - chainCode[i - 1]);
+		}
+			
+		else
+		{
+			bendingSum += abs(chainCode[i] - chainCode[0]);
+			//bendingEnergy.push_back(chainCode[i] - chainCode[0]);
+		}
+			
+	}
+
+	//double answer = bendingSum / (double)bendingEnergy.size();
+
+	return bendingSum;
+
+	
+
+
 }
 
 
