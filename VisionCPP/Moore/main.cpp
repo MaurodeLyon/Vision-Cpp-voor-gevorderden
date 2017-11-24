@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include <opencv2/objdetect.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -8,15 +7,12 @@
 using namespace std;
 using namespace cv;
 
-int allContours(Mat binaryImage, vector<vector<Point>>& contourVecVec);
-void findNextB(Mat img, Point b, Point c, vector<Point> vec);
+void findNextB(Mat image, Point b, Point c, vector<Point> vec);
+int allContours(Mat image_binary, vector<vector<Point>>& contours);
 int getDirNr(Point p, Point c);
+int getDirectionClosest(Mat image, Point p, int starting_direction = 0);
 bool containsPoint(vector<Point> points, Point p);
-//int currentDir = 0;
-
-Point getPoint(Point p, int dirNr);
-
-int getDirectionClosest(Mat img, Point p, int startDir = 0);
+Point getPoint(Point p, int direction_number);
 
 Point2d* firstB0;
 
@@ -48,18 +44,18 @@ int main()
 	waitKey(0);
 }
 
-int allContours(Mat binaryImage, vector<vector<Point>>& contours)
+int allContours(Mat image_binary, vector<vector<Point>>& contours)
 {
 	Mat labeledImage;
 	vector<Point2d *> firstPixels;
 	vector<Point2d *> positions;
 	vector<int> areas;
-	labelBLOBsInfo(binaryImage, labeledImage, firstPixels, positions, areas);
+	labelBLOBsInfo(image_binary, labeledImage, firstPixels, positions, areas);
 	for (Point2d* first_pixel_point : firstPixels)
 	{
 		cout << "------" << endl;
 		cout << "Point: " << first_pixel_point->x << " - " << first_pixel_point->y << endl;
-		cout << getEntryImage(binaryImage, first_pixel_point->x, first_pixel_point->y);
+		cout << getEntryImage(image_binary, first_pixel_point->x, first_pixel_point->y);
 		cout << "------" << endl;
 
 		//To continue testing I had to exclude the last figure (due to one line thick figure, doesnt work as of now)
@@ -73,36 +69,28 @@ int allContours(Mat binaryImage, vector<vector<Point>>& contours)
 
 		// Switching x and y because Jan's conventions are unconventional
 		Point2d correct_point = Point(firstB0->y, firstB0->x);
-		cout << getEntryImage(binaryImage, correct_point.y, correct_point.x) << endl;
+		cout << getEntryImage(image_binary, correct_point.y, correct_point.x) << endl;
 		new_countour.push_back(correct_point);
-		findNextB(binaryImage, correct_point, Point(correct_point.x - 1, correct_point.y), new_countour);
+		findNextB(image_binary, correct_point, Point(correct_point.x - 1, correct_point.y), new_countour);
 		contours.push_back(new_countour);
 		cout << "contour done" << endl;
 	}
 	return 0;
 }
 
-///Recursive function that finds the next 'b' based on the given point
-///TODO correct 'current_point' tracking
+//Recursive function that finds the next 'b' based on the given point
+//TODO correct 'current_point' tracking
 void findNextB(Mat image, Point b, Point c, vector<Point> vec)
 {
-	int nearest;
-	int newX = b.x;
-	int newY = b.y;
-	//findNext1(makeAdmin(image), newX, newY, nearest);
-	//Point nextPoint(newX, newY);
-	int dir;
-	Point nextPoint;
 	//Find currentDirectionNumber based on point current_point, relative to the latest 'b'
 	int currentDir = getDirNr(b, c);
 	bool looping = true;
-
 	while (looping)
 	{
 		//Retrieves direction to new 'b', currentDir is always the last dir minus 1 (eg dir 7 means currentDir 6, 0 means 7 etc)
-		dir = getDirectionClosest(image, b, currentDir);
+		int dir = getDirectionClosest(image, b, currentDir);
 		//Retrieves coords of new 'b'
-		nextPoint = getPoint(b, dir);
+		Point nextPoint = getPoint(b, dir);
 
 		//Checks if new point isnt already added and that dir has indeed found a 1 (-1 means an incorrect direction or none was found)
 		// a -1 or already added point prompts the statement below to cycle to the next direction and check again
@@ -110,15 +98,12 @@ void findNextB(Mat image, Point b, Point c, vector<Point> vec)
 		{
 			//Stop while loop if new b is found
 			looping = false;
+
 			//Make sure currentDir doesnt go below 0
 			if (dir > 0)
 				currentDir = dir - 1;
 			else if (dir == 0)
 				currentDir = 7;
-			/*if (currentDir < 0)
-			{
-				currentDir = 8 - currentDir;
-			}*/
 		}
 		else
 		{
@@ -127,33 +112,16 @@ void findNextB(Mat image, Point b, Point c, vector<Point> vec)
 			else
 				currentDir = 0;
 		}
+
 		//Check if origin is reached, if so abort
 		if (nextPoint.x == firstB0->y && nextPoint.y == firstB0->x)
 		{
 			return;
 		}
-
-		//if (dir == -1)
-		//currentDir = 0;
-	}
-
-
-	//Point nextPoint = getPoint(point, nearest);
-
-	//TODO: remove this check, should not be needed as this is already being checked in the aforementioned while loop
-	if (!containsPoint(vec, nextPoint))
-	{
-		//Calculate the coords of the last 0 preceding nextPoint
-		Point newC = getPoint(b, currentDir);
-		cout << "pointC: " << newC << endl;
-		cout << "pointB: " << nextPoint << endl;
-		vec.push_back(nextPoint);
-		//contours.at<uchar>(Point(nextPoint.y, nextPoint.x)) = 255;
-		findNextB(image, nextPoint, newC, vec);
 	}
 }
 
-///Because the == operator is not implemented for Mat objects this function is used.
+//Because the == operator is not implemented for Mat objects this function is used.
 bool containsPoint(vector<Point> points, Point point)
 {
 	for (Point e : points)
@@ -166,8 +134,8 @@ bool containsPoint(vector<Point> points, Point point)
 	return false;
 }
 
-///Gets closest 1 by turning clockwise from starting position until its found
-///Returns -1 if no 1 was found in range.
+//Gets closest 1 by turning clockwise from starting position until its found
+//Returns -1 if no 1 was found in range.
 int getDirectionClosest(Mat image, Point point, int start_direction)
 {
 	for (int i = start_direction; i < 8; i++)
