@@ -92,7 +92,6 @@ void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, 
 	}
 }
 
-
 /*
  * Turns clockwise around a point in a binary image_binary to find a 1 based on a starting direction
  *    1 2 3
@@ -186,6 +185,7 @@ Point getDirectionPoint(Point p, int direction_number)
 		return Point(-1, -1);
 	}
 }
+
 /*
  * calculates the bending energy
  */
