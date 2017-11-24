@@ -21,9 +21,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B7B3C4CF-416A-4637-A826-33A14D3F49F0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>MooreV2</RootNamespace>
+    <RootNamespace>Moore</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
-    <ProjectName>MooreV2</ProjectName>
+    <ProjectName>Moore</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

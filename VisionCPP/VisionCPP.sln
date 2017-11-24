@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Moore", "Moore\Moore.vcxproj", "{D171CEAD-A690-47EA-9D56-EAB18E4E95E9}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MooreV2", "MooreV2\MooreV2.vcxproj", "{B7B3C4CF-416A-4637-A826-33A14D3F49F0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Moore", "Moore\Moore.vcxproj", "{B7B3C4CF-416A-4637-A826-33A14D3F49F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
