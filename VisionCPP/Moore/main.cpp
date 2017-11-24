@@ -17,6 +17,25 @@ Point getDirectionPoint(Point p, int direction_number);
 int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 double bendingEnergy(Mat image_binary, vector<Point>& contour);
 
+void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction)
+  {
+	contour.push_back(current_pixel);
+	int next_direction = getDirectionClosest(image_binary, current_pixel, current_direction);
+	Point next_point = getDirectionPoint(current_pixel, next_direction);
+	if(!(contour[0].x == next_point.x && contour[0].y == next_point.y))
+	{
+		nextPoint(image_binary, contour, next_point, next_direction);
+	}	
+}
+
+void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel)
+{
+	contour.push_back(first_pixel);
+	int current_direction = getDirectionClosest(image_binary, first_pixel);
+	Point next_point = getDirectionPoint(first_pixel, current_direction);
+	nextPoint(image_binary, contour, next_point, current_direction);
+}
+
 int main()
 {
 	Mat image_original = imread("./../Images/square.bmp ", CV_LOAD_IMAGE_COLOR);
@@ -73,7 +92,10 @@ int getContours(Mat image_binary, vector<vector<Point>>& contours)
 		contour.push_back(starting_pixel);
 		findNextContourPixel(image_binary, starting_pixel, Point(starting_pixel.x - 1, starting_pixel.y), contour,
 		                     firstPixel);
-		contours.push_back(contour);
+		contours.push_back(contour);		
+		vector<Point> contour2;
+		getContour(image_binary, contour2, starting_pixel);
+
 		cout << "contour done" << endl;
 	}
 	return 0;
@@ -154,6 +176,9 @@ bool containsPoint(vector<Point> contour, Point point)
 
 /*
  * Turns clockwise around a point in a binary image_binary to find a 1 based on a starting direction
+ *    1 2 3
+ *    0 p 4
+ *    7 6 5
  * returns -1 if no 1 was found in range
  */
 int getDirectionClosest(Mat binary_image, Point point, int staring_direction)
@@ -172,7 +197,7 @@ int getDirectionClosest(Mat binary_image, Point point, int staring_direction)
 /*
  * returns a direction number based on 2 points
  *    1 2 3
- *    0 p1 4
+ *    0 p 4
  *    7 6 5
  * returns -1 if points are incorrect
  */
@@ -201,7 +226,7 @@ int getDirectionNumber(Point p1, Point p2)
 /*
  * returns a new point based on a current point and a direction
  *    1 2 3
- *    0 p1 4
+ *    0 p 4
  *    7 6 5
  * returns Point(-1,-1) if a incorrect direction is supplied
  */
