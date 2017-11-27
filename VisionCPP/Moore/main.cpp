@@ -39,17 +39,20 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 		// find next pixel
 		int current_direction = getDirectionClosest(image_binary, Point(firstPixel->y, firstPixel->x));
 		Point next_point = getDirectionPoint(Point(firstPixel->y, firstPixel->x), current_direction);
-		contour.push_back(next_point);
-		int next_direction = getDirectionClosest(image_binary, next_point, current_direction - 2);
-		next_point = getDirectionPoint(next_point, next_direction);
-		do
+		if (!(next_point.y == -1 && next_point.x == -1))
 		{
 			contour.push_back(next_point);
-			next_direction = getDirectionClosest(image_binary, next_point, next_direction - 2);
+			int next_direction = getDirectionClosest(image_binary, next_point, current_direction - 2);
 			next_point = getDirectionPoint(next_point, next_direction);
-		}
-		while (!(firstPixel->y == next_point.x && firstPixel->x == next_point.y));
 
+			do
+			{
+				contour.push_back(next_point);
+				next_direction = getDirectionClosest(image_binary, next_point, next_direction - 2);
+				next_point = getDirectionPoint(next_point, next_direction);
+			}
+			while (!(firstPixel->y == next_point.x && firstPixel->x == next_point.y));
+		}
 		contours.push_back(contour);
 		cout << "contour done" << endl;
 	}
@@ -67,7 +70,7 @@ int main()
 	imshow("Gray", image_gray);
 	waitKey(0);
 
-	Mat image_blur;
+	/*Mat image_blur;
 	GaussianBlur(image_gray, image_blur, Size(3, 3), 0, 0);
 	imshow("Blur", image_blur);
 	waitKey(0);
@@ -79,10 +82,10 @@ int main()
 	Mat image_erode;
 	erode(image_dilate, image_erode, getStructuringElement(MORPH_RECT, Size(5, 5), Point(1, 1)));
 	imshow("erode", image_erode);
-	waitKey(0);
+	waitKey(0);*/
 
 	Mat image_binary;
-	threshold(image_erode, image_binary, 200, 1, CV_THRESH_BINARY_INV);
+	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
 	imshow("Binary", image_binary);
 	waitKey(0);
 
