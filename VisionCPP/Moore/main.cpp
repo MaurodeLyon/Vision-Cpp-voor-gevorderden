@@ -16,7 +16,7 @@ int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 Point getDirectionPoint(Point p, int direction_number);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
-double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
+double bendingEnergy(vector<Point>& contourVec);
 
 int main()
 {
@@ -29,8 +29,13 @@ int main()
 	imshow("Gray", image_gray);
 	waitKey(0);
 
+	Mat image_blur;
+	GaussianBlur(image_gray, image_blur, Size(3, 3), 0, 0);
+	imshow("Blur",image_blur);
+	waitKey(0);
+
 	Mat image_binary;
-	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
+	threshold(image_blur, image_binary, 200, 1, CV_THRESH_BINARY_INV);
 	imshow("Binary", image_binary);
 	waitKey(0);
 
@@ -41,12 +46,27 @@ int main()
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
 	allContours(image_binary16S, *contours);
+	for (vector<Point> contour : *contours)
+	{
+		cout << bendingEnergy(contour) << endl;
+	}
+	waitKey(0);
+
+	Mat contourMat = image_binary.clone();
+	contourMat = 0;
+
+	for (vector<Point> src : *contours)
+	{
+		for (Point e : src)
+			contourMat.at<uchar>(Point(e.x, e.y)) = 255;
+	}
+	imshow("contours", contourMat);
 	waitKey(0);
 }
 
 /*
 * finds all contours in an image_binary
-*/
+*/  
 int allContours(Mat image_binary, vector<vector<Point>>& contours)
 {
 	Mat image_labled;
@@ -189,7 +209,7 @@ Point getDirectionPoint(Point p, int direction_number)
 /*
  * calculates the bending energy
  */
-double bendingEnergy(Mat image_binary, vector<Point>& contour)
+double bendingEnergy(vector<Point>& contour)
 {
 	vector<int> chainCode;
 	for (int i = 0; i < contour.size(); i++)
@@ -202,10 +222,7 @@ double bendingEnergy(Mat image_binary, vector<Point>& contour)
 	double bendingSum = 0;
 	for (int i = 1; i < chainCode.size(); i++)
 	{
-		if (i + 1 < contour.size())
-			bendingSum += abs(chainCode[i] - chainCode[i - 1]);
-		else
-			bendingSum += abs(chainCode[i] - chainCode[0]);
+		bendingSum += abs(chainCode[i] - chainCode[i - 1]);
 	}
 	return bendingSum;
 }
