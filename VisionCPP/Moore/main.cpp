@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cv;
 
-int allContours(Mat image_binary, vector<vector<Point>>& contours);
+int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours);
 int getDirectionNumber(Point p1, Point p2);
 bool containsPoint(vector<Point> contour, Point p);
 int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
@@ -17,6 +17,45 @@ Point getDirectionPoint(Point p, int direction_number);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
 double bendingEnergy(vector<Point>& contourVec);
+
+int allContours(Mat image_binary, vector<vector<Point>>& contours)
+{
+	Mat image_labled;
+	vector<Point2d *> firstPixels;
+	vector<Point2d *> centers;
+	vector<int> areas;
+	labelBLOBsInfo(image_binary, image_labled, firstPixels, centers, areas);
+
+	for (Point2d* firstPixel : firstPixels)
+	{
+		cout << "Getting contour for figure with first pixel ["
+			<< firstPixel->x << "," << firstPixel->y << "] = "
+			<< getEntryImage(image_binary, firstPixel->x, firstPixel->y)
+			<< endl;
+
+		// Start creating vector which will contain the contour
+ 		vector<Point> contour;
+		// add first pixel 
+		contour.push_back(Point(firstPixel->y, firstPixel->x));
+		// find next pixel
+		int current_direction = getDirectionClosest(image_binary, Point(firstPixel->y, firstPixel->x));
+		Point next_point = getDirectionPoint(Point(firstPixel->y, firstPixel->x), current_direction);
+		contour.push_back(next_point);
+		int next_direction = getDirectionClosest(image_binary, next_point, current_direction - 2);
+		next_point = getDirectionPoint(next_point, next_direction);
+		do
+		{
+			contour.push_back(next_point);
+			next_direction	= getDirectionClosest(image_binary, next_point, next_direction - 2);
+			next_point = getDirectionPoint(next_point, next_direction);
+		}
+ 		while (!(firstPixel->y == next_point.x && firstPixel->x == next_point.y));
+
+		contours.push_back(contour);
+		cout << "contour done" << endl;
+	}
+	return -1;
+}
 
 int main()
 {
@@ -29,13 +68,13 @@ int main()
 	imshow("Gray", image_gray);
 	waitKey(0);
 
-	Mat image_blur;
+	/*Mat image_blur;
 	GaussianBlur(image_gray, image_blur, Size(3, 3), 0, 0);
-	imshow("Blur",image_blur);
-	waitKey(0);
+	imshow("Blur", image_blur);
+	waitKey(0);*/
 
 	Mat image_binary;
-	threshold(image_blur, image_binary, 200, 1, CV_THRESH_BINARY_INV);
+	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
 	imshow("Binary", image_binary);
 	waitKey(0);
 
@@ -66,8 +105,8 @@ int main()
 
 /*
 * finds all contours in an image_binary
-*/  
-int allContours(Mat image_binary, vector<vector<Point>>& contours)
+*/
+int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours)
 {
 	Mat image_labled;
 	vector<Point2d *> firstPixels;
