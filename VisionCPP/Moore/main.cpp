@@ -11,7 +11,6 @@ using namespace cv;
 
 int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours);
 int getDirectionNumber(Point p1, Point p2);
-bool containsPoint(vector<Point> contour, Point p);
 int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 Point getDirectionPoint(Point p, int direction_number);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
