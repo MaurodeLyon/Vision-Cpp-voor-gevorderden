@@ -9,17 +9,32 @@
 using namespace std;
 using namespace cv;
 
-int allContours(Mat image_binary, vector<vector<Point>>& contours);
+// fase 1
+
 int getDirectionNumber(Point p1, Point p2);
-bool containsPoint(vector<Point> contour, Point p);
 int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 Point getDirectionPoint(Point p, int direction_number);
+
+int allContours(Mat image_binary, vector<vector<Point>>& contours);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
+
+void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours)
+{
+	image_contour = image_binary.clone();
+	image_contour = 0;
+	for (vector<Point> vec : *contours)
+	{
+		for (Point e : vec)
+			image_contour.at<uchar>(Point(e.x, e.y)) = 255;
+	}
+}
+
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
 
-int allBoundingBoxes(const vector<vector<Point>> & contours,
-	vector<vector<Point>> & bbs);int compartMentalise(Mat image_original, std::string name);
+// Fase 2
+int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bbs);
+int compartMentalise(Mat image_original, std::string name);
 
 
 int main()
@@ -47,23 +62,14 @@ int main()
 	allContours(image_binary16S, *contours);
 	waitKey(0);
 
-
-	Mat contoursMat = image_binary.clone();
-	contoursMat = 0;
-
-
-	for (vector<Point> vec : *contours)
-	{
-		for (Point e : vec)
-			contoursMat.at<uchar>(Point(e.x, e.y)) = 255;
-	}
-
+	Mat contoursMat;
+	drawCountours(image_binary, contoursMat, contours);
 	imshow("contours", contoursMat);
 	waitKey(0);
 
 	Mat boundingBoxes = image_original.clone();
 
-	vector<vector<Point>> *bbs = new vector<vector<Point>>();
+	vector<vector<Point>>* bbs = new vector<vector<Point>>();
 
 	allBoundingBoxes(*contours, *bbs);
 
@@ -73,7 +79,7 @@ int main()
 		{
 			ellipse(boundingBoxes, e, Size(3, 3), 0, 0, 360, Scalar(255, 0, 255), 2, 8, 0);
 		}
-		Rect rect= Rect(bb[0].x, bb[2].y, bb[1].x - bb[0].x + 1, bb[3].y - bb[2].y + 1);
+		Rect rect = Rect(bb[0].x, bb[2].y, bb[1].x - bb[0].x + 1, bb[3].y - bb[2].y + 1);
 		rectangle(boundingBoxes, rect, Scalar(rand() & 255, rand() & 255, rand() & 255), 1, 8);
 	}
 
@@ -81,10 +87,7 @@ int main()
 	waitKey(0);
 
 	compartMentalise(image_original, "hond");
-
-
 }
-
 
 
 /*
@@ -257,14 +260,13 @@ double bendingEnergy(Mat image_binary, vector<Point>& contour)
 // pre: contours contains the contours for which bounding boxes have to be delivered
 // post: bbs contains all bounding boxes. The index corresponds to the index of contours.
 // I.e. bbs[i] belongs to contours[i]
-int allBoundingBoxes(const vector<vector<Point>> & contours,
-	vector<vector<Point>> & bbs)
+int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bbs)
 {
 	for (vector<Point> vec : contours)
 	{
 		vector<Point> bb;
 
-		int  xmin = 0, ymin = 0, xmax = -1, ymax = -1, i;
+		int xmin = 0, ymin = 0, xmax = -1, ymax = -1, i;
 		Point ptxmin, ptymin, ptxmax, ptymax;
 
 		Point pt = vec[0];
@@ -317,20 +319,20 @@ int allBoundingBoxes(const vector<vector<Point>> & contours,
 int compartMentalise(Mat image_original, string name)
 {
 	Mat image_gray;
-	cvtColor(image_original, image_gray, CV_BGR2GRAY);	
+	cvtColor(image_original, image_gray, CV_BGR2GRAY);
 
 	Mat image_binary;
 	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
-	
+
 	Mat image_binary16S;
 	image_binary.convertTo(image_binary16S, CV_16S);
-	
+
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
 	allContours(image_binary16S, *contours);
 
 	Mat boundingBoxes = image_original.clone();
 
-	vector<vector<Point>> *bbs = new vector<vector<Point>>();
+	vector<vector<Point>>* bbs = new vector<vector<Point>>();
 
 	allBoundingBoxes(*contours, *bbs);
 
@@ -344,9 +346,6 @@ int compartMentalise(Mat image_original, string name)
 		counter++;
 	}
 
-	
 
 	return 1;
-
-
 }
