@@ -18,17 +18,7 @@ Point getDirectionPoint(Point p, int direction_number);
 int allContours(Mat image_binary, vector<vector<Point>>& contours);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
-
-void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours)
-{
-	image_contour = image_binary.clone();
-	image_contour = 0;
-	for (vector<Point> vec : *contours)
-	{
-		for (Point e : vec)
-			image_contour.at<uchar>(Point(e.x, e.y)) = 255;
-	}
-}
+void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours);
 
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
 
@@ -63,7 +53,7 @@ int main()
 	waitKey(0);
 
 	Mat contoursMat;
-	drawCountours(image_binary, contoursMat, contours);
+	drawContours(image_binary, contoursMat, contours);
 	imshow("contours", contoursMat);
 	waitKey(0);
 
@@ -125,6 +115,20 @@ void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel)
 	int current_direction = getDirectionClosest(image_binary, first_pixel);
 	Point next_point = getDirectionPoint(first_pixel, current_direction);
 	nextPoint(image_binary, contour, next_point, current_direction);
+}
+
+/*
+ * function returns image with the contours if the binary image
+ */
+void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours)
+{
+	image_contour = image_binary.clone();
+	image_contour = 0;
+	for (vector<Point> vec : *contours)
+	{
+		for (Point e : vec)
+			image_contour.at<uchar>(Point(e.x, e.y)) = 255;
+	}
 }
 
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction)
