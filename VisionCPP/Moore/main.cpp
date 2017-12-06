@@ -397,7 +397,8 @@ void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVe
 	for (Point p : newPointsToCheck)
 		regionPixels.push_back(p);
 
-	fillNextPixels(newPointsToCheck, contourVec, regionPixels);
+	if(newPointsToCheck.size()!=0)
+		fillNextPixels(newPointsToCheck, contourVec, regionPixels);
 
 }
 
