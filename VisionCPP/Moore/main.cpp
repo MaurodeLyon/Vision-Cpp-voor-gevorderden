@@ -10,7 +10,6 @@ using namespace std;
 using namespace cv;
 
 // fase 1
-
 int getDirectionNumber(Point p1, Point p2);
 int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 Point getDirectionPoint(Point p, int direction_number);
@@ -23,8 +22,9 @@ void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* c
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
 
 // Fase 2
-int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bbs);
-int compartMentalise(Mat image_original, std::string name);
+int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bounding_boxes);
+int compartMentalise(Mat image_original, string name);
+void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes);
 
 
 int main()
@@ -57,23 +57,12 @@ int main()
 	imshow("contours", contoursMat);
 	waitKey(0);
 
-	Mat boundingBoxes = image_original.clone();
+	vector<vector<Point>>* bounding_boxes = new vector<vector<Point>>();
+	allBoundingBoxes(*contours, *bounding_boxes);
 
-	vector<vector<Point>>* bbs = new vector<vector<Point>>();
-
-	allBoundingBoxes(*contours, *bbs);
-
-	for (vector<Point> bb : *bbs)
-	{
-		for (Point e : bb)
-		{
-			ellipse(boundingBoxes, e, Size(3, 3), 0, 0, 360, Scalar(255, 0, 255), 2, 8, 0);
-		}
-		Rect rect = Rect(bb[0].x, bb[2].y, bb[1].x - bb[0].x + 1, bb[3].y - bb[2].y + 1);
-		rectangle(boundingBoxes, rect, Scalar(rand() & 255, rand() & 255, rand() & 255), 1, 8);
-	}
-
-	imshow("boundingBoxes", boundingBoxes);
+	Mat image_bounding_boxes;
+	drawBoundingBox(image_original, image_bounding_boxes, bounding_boxes);
+	imshow("boundingBoxes", image_bounding_boxes);
 	waitKey(0);
 
 	compartMentalise(image_original, "hond");
@@ -262,60 +251,54 @@ double bendingEnergy(Mat image_binary, vector<Point>& contour)
 
 // func: delivers bounding Boxes of contours
 // pre: contours contains the contours for which bounding boxes have to be delivered
-// post: bbs contains all bounding boxes. The index corresponds to the index of contours.
-// I.e. bbs[i] belongs to contours[i]
-int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bbs)
+// post: boundingBoxes contains all bounding boxes. The index corresponds to the index of contours.
+// I.e. boundingBoxes[i] belongs to contours[i]
+int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bounding_boxes)
 {
-	for (vector<Point> vec : contours)
+	for (vector<Point> contour : contours)
 	{
-		vector<Point> bb;
+		int xmin = 0, ymin = 0, xmax = -1, ymax = -1;
+		Point left_border, top_border, right_border, bottom_border;
 
-		int xmin = 0, ymin = 0, xmax = -1, ymax = -1, i;
-		Point ptxmin, ptymin, ptxmax, ptymax;
+		left_border = top_border = right_border = bottom_border = contour[0];
+		xmin = xmax = contour[0].x;
+		ymin = ymax = contour[0].y;
 
-		Point pt = vec[0];
-
-		ptxmin = ptymin = ptxmax = ptymax = pt;
-		xmin = xmax = pt.x;
-		ymin = ymax = pt.y;
-
-		for (int i = 1; i < vec.size(); i++)
+		for (int i = 1; i < contour.size(); i++)
 		{
-			pt = vec[i];
+			Point point = contour[i];
 
-			if (xmin > pt.x)
+			if (xmin > point.x)
 			{
-				xmin = pt.x;
-				ptxmin = pt;
+				xmin = point.x;
+				left_border = point;
 			}
 
-
-			if (xmax < pt.x)
+			if (xmax < point.x)
 			{
-				xmax = pt.x;
-				ptxmax = pt;
+				xmax = point.x;
+				right_border = point;
 			}
 
-			if (ymin > pt.y)
+			if (ymin > point.y)
 			{
-				ymin = pt.y;
-				ptymin = pt;
+				ymin = point.y;
+				top_border = point;
 			}
 
-			if (ymax < pt.y)
+			if (ymax < point.y)
 			{
-				ymax = pt.y;
-				ptymax = pt;
+				ymax = point.y;
+				bottom_border = point;
 			}
 		}
-		bb.push_back(ptxmin);
-		bb.push_back(ptxmax);
-		bb.push_back(ptymin);
-		bb.push_back(ptymax);
-
-		bbs.push_back(bb);
+		vector<Point> bounding_box;
+		bounding_box.push_back(left_border);
+		bounding_box.push_back(right_border);
+		bounding_box.push_back(top_border);
+		bounding_box.push_back(bottom_border);
+		bounding_boxes.push_back(bounding_box);
 	}
-
 	return 1;
 }
 
@@ -346,10 +329,27 @@ int compartMentalise(Mat image_original, string name)
 		Rect rect = Rect(bb[0].x, bb[2].y, bb[1].x - bb[0].x + 1, bb[3].y - bb[2].y + 1);
 		Mat image_roi = image_original(rect);
 
-		imwrite("./../Images/" + name + "_" + std::to_string(counter) + ".jpg", image_roi);
+		imwrite("./../Images/" + name + "_" + to_string(counter) + ".jpg", image_roi);
 		counter++;
 	}
 
 
 	return 1;
+}
+
+void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes)
+{
+	{
+		image_bounding_boxes = image_original.clone();
+		for (vector<Point> bounding_box : *bounding_boxes)
+		{
+			for (Point point : bounding_box)
+			{
+				ellipse(image_bounding_boxes, point, Size(3, 3), 0, 0, 360, Scalar(255, 0, 255), 2, 8, 0);
+			}
+			Rect rect = Rect(bounding_box[0].x, bounding_box[2].y, bounding_box[1].x - bounding_box[0].x + 1,
+			                 bounding_box[3].y - bounding_box[2].y + 1);
+			rectangle(image_bounding_boxes, rect, Scalar(rand() & 255, rand() & 255, rand() & 255), 1, 8);
+		}
+	}
 }
