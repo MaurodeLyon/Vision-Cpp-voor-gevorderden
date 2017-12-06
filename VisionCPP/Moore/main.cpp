@@ -14,12 +14,13 @@ int getDirectionNumber(Point p1, Point p2);
 int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 Point getDirectionPoint(Point p, int direction_number);
 
-int allContours(Mat image_binary, vector<vector<Point>>& contours);
+int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
 void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours);
-
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
+int allContours(Mat image_binary, vector<vector<Point>>& contours);
+
 
 // Fase 2
 int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bounding_boxes);
@@ -48,7 +49,7 @@ int main()
 	show16SImageStretch(image_binary16S, "Binary 16S");
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContours(image_binary16S, *contours);
+	allContoursRecursive(image_binary16S, *contours);
 
 	Mat contoursMat;
 	drawContours(image_binary, contoursMat, contours);
@@ -81,7 +82,7 @@ int main()
 /*
 * finds all contours in an image_binary
 */
-int allContours(Mat image_binary, vector<vector<Point>>& contours)
+int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours)
 {
 	Mat image_labled;
 	vector<Point2d *> firstPixels;
@@ -258,6 +259,49 @@ double bendingEnergy(Mat image_binary, vector<Point>& contour)
 	return bendingSum;
 }
 
+int allContours(Mat image_binary, vector<vector<Point>>& contours)
+{
+	Mat image_labled;
+	vector<Point2d *> firstPixels;
+	vector<Point2d *> centers;
+	vector<int> areas;
+	labelBLOBsInfo(image_binary, image_labled, firstPixels, centers, areas);
+
+	for (Point2d* firstPixel : firstPixels)
+	{
+		cout << "Getting contour for figure with first pixel ["
+			<< firstPixel->x << "," << firstPixel->y << "] = "
+			<< getEntryImage(image_binary, firstPixel->x, firstPixel->y)
+			<< endl;
+
+		// Start creating vector which will contain the contour
+		vector<Point> contour;
+		// add first pixel 
+		contour.push_back(Point(firstPixel->y, firstPixel->x));
+		// find next pixel
+		int current_direction = getDirectionClosest(image_binary, Point(firstPixel->y, firstPixel->x));
+		Point next_point = getDirectionPoint(Point(firstPixel->y, firstPixel->x), current_direction);
+		if (!(next_point.y == -1 && next_point.x == -1))
+		{
+			contour.push_back(next_point);
+			int next_direction = getDirectionClosest(image_binary, next_point, current_direction - 2);
+			next_point = getDirectionPoint(next_point, next_direction);
+
+			do
+			{
+				contour.push_back(next_point);
+				next_direction = getDirectionClosest(image_binary, next_point, next_direction - 2);
+				next_point = getDirectionPoint(next_point, next_direction);
+			}
+			while (!(firstPixel->y == next_point.x && firstPixel->x == next_point.y));
+		}
+		contours.push_back(contour);
+		cout << "contour done" << endl;
+	}
+	return -1;
+}
+
+
 // func: delivers bounding Boxes of contours
 // pre: contours contains the contours for which bounding boxes have to be delivered
 // post: boundingBoxes contains all bounding boxes. The index corresponds to the index of contours.
@@ -324,7 +368,7 @@ int compartMentalise(Mat image_original, string name)
 	image_binary.convertTo(image_binary16S, CV_16S);
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContours(image_binary16S, *contours);
+	allContoursRecursive(image_binary16S, *contours);
 
 	Mat boundingBoxes = image_original.clone();
 
