@@ -27,8 +27,8 @@ int compartMentalise(Mat image_original, string name);
 void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes);
 
 bool containsPoint(vector<Point> points, Point p);
-int enclosedPixels(const vector<Point> & contourVec, vector<Point> & regionPixels);
-void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVec, vector<Point> & regionPixels);
+int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels);
+void fillNextPixels(vector<Point> pointsToCheck, const vector<Point>& contourVec, vector<Point>& regionPixels);
 
 int main()
 {
@@ -364,7 +364,7 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 	}
 }
 
-void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVec, vector<Point> & regionPixels)
+void fillNextPixels(vector<Point> pointsToCheck, const vector<Point>& contourVec, vector<Point>& regionPixels)
 {
 	vector<Point> newPointsToCheck;
 	for (Point p : pointsToCheck)
@@ -385,17 +385,16 @@ void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVe
 		if (!containsPoint(contourVec, Point(p.x, p.y + 1)) && !containsPoint(regionPixels, Point(p.x, p.y + 1)))
 			if (!containsPoint(newPointsToCheck, Point(p.x, p.y + 1)))
 				newPointsToCheck.push_back(Point(p.x, p.y + 1));
-
 	}
 
 	for (Point p : newPointsToCheck)
 		regionPixels.push_back(p);
 
-	fillNextPixels(newPointsToCheck, contourVec, regionPixels);
-
+	if (newPointsToCheck.size() != 0)
+		fillNextPixels(newPointsToCheck, contourVec, regionPixels);
 }
 
-int enclosedPixels(const vector<Point> & contourVec, vector<Point> & regionPixels)
+int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels)
 {
 	//Perhaps switch?
 	Point startPixel(6, 2);
@@ -404,7 +403,6 @@ int enclosedPixels(const vector<Point> & contourVec, vector<Point> & regionPixel
 	fillNextPixels(regionPixels, contourVec, regionPixels);
 
 	return 0;
-
 }
 
 bool containsPoint(vector<Point> points, Point p)
