@@ -408,6 +408,32 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 	}
 }
 
+int enclosedPixels(const vector<Point>& contour, vector<Point>& regionPixels)
+{
+	bool isInContour = false;
+	for (int i = 0; i < contour.size(); i++)
+	{
+		if (contour[i] == Point(contour[0].x, contour[0].y + 1))
+		{
+			isInContour = true;
+		}
+	}
+	Point startPixel;
+	if (isInContour)
+	{
+		startPixel = Point(contour[0].x + 1, contour[0].y + 1);
+	}
+	else
+	{
+		startPixel = Point(contour[0].x, contour[0].y + 1);
+	}
+	regionPixels.push_back(startPixel);
+
+	fillNextPixels(regionPixels, contour, regionPixels);
+
+	return 0;
+}
+
 void fillNextPixels(vector<Point> pointsToCheck, const vector<Point>& contourVec, vector<Point>& regionPixels)
 {
 	vector<Point> newPointsToCheck;
@@ -438,16 +464,6 @@ void fillNextPixels(vector<Point> pointsToCheck, const vector<Point>& contourVec
 		fillNextPixels(newPointsToCheck, contourVec, regionPixels);
 }
 
-int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels)
-{
-	//Perhaps switch?
-	Point startPixel(6, 2);
-	regionPixels.push_back(startPixel);
-
-	fillNextPixels(regionPixels, contourVec, regionPixels);
-
-	return 0;
-}
 
 bool containsPoint(vector<Point> points, Point p)
 {
