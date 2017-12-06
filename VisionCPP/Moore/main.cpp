@@ -29,33 +29,27 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 
 int main()
 {
-	Mat image_original = imread("./../Images/basisfiguren.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat image_original = imread("./../Images/figuren.jpg", CV_LOAD_IMAGE_COLOR);
 	imshow("Original", image_original);
-	waitKey(0);
 
 	Mat image_gray;
 	cvtColor(image_original, image_gray, CV_BGR2GRAY);
 	imshow("Gray", image_gray);
-	waitKey(0);
 
 	Mat image_binary;
 	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
 	imshow("Binary", image_binary);
-	waitKey(0);
 
 	Mat image_binary16S;
 	image_binary.convertTo(image_binary16S, CV_16S);
 	show16SImageStretch(image_binary16S, "Binary 16S");
-	waitKey(0);
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
 	allContours(image_binary16S, *contours);
-	waitKey(0);
 
 	Mat contoursMat;
 	drawContours(image_binary, contoursMat, contours);
 	imshow("contours", contoursMat);
-	waitKey(0);
 
 	vector<vector<Point>>* bounding_boxes = new vector<vector<Point>>();
 	allBoundingBoxes(*contours, *bounding_boxes);
@@ -63,9 +57,9 @@ int main()
 	Mat image_bounding_boxes;
 	drawBoundingBox(image_original, image_bounding_boxes, bounding_boxes);
 	imshow("boundingBoxes", image_bounding_boxes);
-	waitKey(0);
 
-	compartMentalise(image_original, "hond");
+	compartMentalise(image_original, "figuur");
+	waitKey(0);
 }
 
 
@@ -319,24 +313,25 @@ int compartMentalise(Mat image_original, string name)
 
 	Mat boundingBoxes = image_original.clone();
 
-	vector<vector<Point>>* bbs = new vector<vector<Point>>();
+	vector<vector<Point>>* bounding_boxes = new vector<vector<Point>>();
 
-	allBoundingBoxes(*contours, *bbs);
+	allBoundingBoxes(*contours, *bounding_boxes);
 
-	int counter = 0;
-	for (vector<Point> bb : *bbs)
+	for (int i = 0; i < bounding_boxes->size(); i++)
 	{
-		Rect rect = Rect(bb[0].x, bb[2].y, bb[1].x - bb[0].x + 1, bb[3].y - bb[2].y + 1);
+		vector<Point> bounding_box = bounding_boxes->at(i);
+		Rect rect = Rect(bounding_box[0].x, bounding_box[2].y, bounding_box[1].x - bounding_box[0].x + 1,
+		                 bounding_box[3].y - bounding_box[2].y + 1);
 		Mat image_roi = image_original(rect);
 
-		imwrite("./../Images/" + name + "_" + to_string(counter) + ".jpg", image_roi);
-		counter++;
+		imwrite("./../Images/trainingset/" + name + "_" + to_string(i) + ".jpg", image_roi);
 	}
-
-
 	return 1;
 }
 
+/*
+ *  outputs an image which displays the bounding box
+ */
 void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes)
 {
 	{
