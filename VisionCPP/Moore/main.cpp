@@ -418,19 +418,13 @@ int enclosedPixels(const vector<Point>& contour, vector<Point>& regionPixels)
 			isInContour = true;
 		}
 	}
-	Point startPixel;
+
+	Point startPixel(contour[0].x, contour[0].y + 1);
 	if (isInContour)
-	{
 		startPixel = Point(contour[0].x + 1, contour[0].y + 1);
-	}
-	else
-	{
-		startPixel = Point(contour[0].x, contour[0].y + 1);
-	}
+
 	regionPixels.push_back(startPixel);
-
 	fillNextPixels(regionPixels, contour, regionPixels);
-
 	return 0;
 }
 
