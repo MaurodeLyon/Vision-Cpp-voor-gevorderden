@@ -26,6 +26,9 @@ int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>
 int compartMentalise(Mat image_original, string name);
 void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes);
 
+bool containsPoint(vector<Point> points, Point p);
+int enclosedPixels(const vector<Point> & contourVec, vector<Point> & regionPixels);
+void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVec, vector<Point> & regionPixels);
 
 int main()
 {
@@ -59,6 +62,18 @@ int main()
 	imshow("boundingBoxes", image_bounding_boxes);
 
 	compartMentalise(image_original, "figuur");
+
+	vector<vector<Point>>* regionPixels = new vector<vector<Point>>();
+	for (vector<Point> contour : *contours)
+	{
+		vector<Point> regionPixel;
+		enclosedPixels(contour, regionPixel);
+		regionPixels->push_back(regionPixel);
+	}
+
+	Mat region;
+	drawContours(image_binary, region, regionPixels);
+	imshow("region", region);
 	waitKey(0);
 }
 
@@ -347,4 +362,59 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 			rectangle(image_bounding_boxes, rect, Scalar(rand() & 255, rand() & 255, rand() & 255), 1, 8);
 		}
 	}
+}
+
+void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVec, vector<Point> & regionPixels)
+{
+	vector<Point> newPointsToCheck;
+	for (Point p : pointsToCheck)
+	{
+		//TODO: Prevent dupes	
+		if (!containsPoint(contourVec, Point(p.x - 1, p.y)) && !containsPoint(regionPixels, Point(p.x - 1, p.y)))
+			if (!containsPoint(newPointsToCheck, Point(p.x - 1, p.y)))
+				newPointsToCheck.push_back(Point(p.x - 1, p.y));
+
+		if (!containsPoint(contourVec, Point(p.x, p.y - 1)) && !containsPoint(regionPixels, Point(p.x, p.y - 1)))
+			if (!containsPoint(newPointsToCheck, Point(p.x, p.y - 1)))
+				newPointsToCheck.push_back(Point(p.x, p.y - 1));
+
+		if (!containsPoint(contourVec, Point(p.x + 1, p.y)) && !containsPoint(regionPixels, Point(p.x + 1, p.y)))
+			if (!containsPoint(newPointsToCheck, Point(p.x + 1, p.y)))
+				newPointsToCheck.push_back(Point(p.x + 1, p.y));
+
+		if (!containsPoint(contourVec, Point(p.x, p.y + 1)) && !containsPoint(regionPixels, Point(p.x, p.y + 1)))
+			if (!containsPoint(newPointsToCheck, Point(p.x, p.y + 1)))
+				newPointsToCheck.push_back(Point(p.x, p.y + 1));
+
+	}
+
+	for (Point p : newPointsToCheck)
+		regionPixels.push_back(p);
+
+	fillNextPixels(newPointsToCheck, contourVec, regionPixels);
+
+}
+
+int enclosedPixels(const vector<Point> & contourVec, vector<Point> & regionPixels)
+{
+	//Perhaps switch?
+	Point startPixel(6, 2);
+	regionPixels.push_back(startPixel);
+
+	fillNextPixels(regionPixels, contourVec, regionPixels);
+
+	return 0;
+
+}
+
+bool containsPoint(vector<Point> points, Point p)
+{
+	for (Point e : points)
+	{
+		if (e.x == p.x && e.y == p.y)
+		{
+			return true;
+		}
+	}
+	return false;
 }
