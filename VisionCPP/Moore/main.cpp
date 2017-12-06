@@ -32,7 +32,7 @@ void fillNextPixels(vector<Point> pointsToCheck, const vector<Point> & contourVe
 
 int main()
 {
-	Mat image_original = imread("./../Images/figuren.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat image_original = imread("./../Images/floodfilltest2.png", CV_LOAD_IMAGE_COLOR);
 	imshow("Original", image_original);
 
 	Mat image_gray;
