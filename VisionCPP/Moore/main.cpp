@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 using namespace cv;
@@ -29,11 +30,10 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 
 bool containsPoint(vector<Point> points, Point p);
 int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels);
-void fillNextPixels(vector<Point> pointsToCheck, const vector<Point>& contourVec, vector<Point>& regionPixels);
 
 int main()
 {
-	Mat image_original = imread("./../Images/floodfilltest2.png", CV_LOAD_IMAGE_COLOR);
+	Mat image_original = imread("./../Images/figuren2.jpg", CV_LOAD_IMAGE_COLOR);
 	imshow("Original", image_original);
 
 	Mat image_gray;
@@ -301,7 +301,6 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 	return -1;
 }
 
-
 // func: delivers bounding Boxes of contours
 // pre: contours contains the contours for which bounding boxes have to be delivered
 // post: boundingBoxes contains all bounding boxes. The index corresponds to the index of contours.
@@ -408,56 +407,69 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 	}
 }
 
-int enclosedPixels(const vector<Point>& contour, vector<Point>& regionPixels)
+/*
+ * Start function for recursion
+ */
+int enclosedPixels(const vector<Point>& contour, vector<Point>& region)
 {
-	bool isInContour = false;
-	for (int i = 0; i < contour.size(); i++)
+	// Find start pixel
+	int maxX = 0, maxY = 0;
+	for (Point p : contour)
 	{
-		if (contour[i] == Point(contour[0].x, contour[0].y + 1))
-		{
-			isInContour = true;
-		}
+		if (p.y > maxY) maxY = p.y;
 	}
 
-	Point startPixel(contour[0].x, contour[0].y + 1);
-	if (isInContour)
-		startPixel = Point(contour[0].x + 1, contour[0].y + 1);
+	Point startPixel = Point(-1, -1);
+	for (int y = 1; y < maxY; y++)
+	{
+		for (Point p : contour)
+		{
+			if (p.y == y && p.x > maxX) maxX = p.x;
+		}
+		for (int x = 0; x < maxX; x++)
+		{
+			if (!(find(contour.begin(), contour.end(), Point(contour[0].x + x, contour[0].y + y)) != contour.end()))
+			{
+				startPixel = Point(contour[0].x + x, contour[0].y + y);
+				break;
+			}
+		}
+		if (startPixel.x != -1 && startPixel.y != -1)
+			break;
+	}
 
-	regionPixels.push_back(startPixel);
-	fillNextPixels(regionPixels, contour, regionPixels);
+	region.push_back(startPixel);
+
+	vector<Point> edge;
+	edge.push_back(startPixel);
+	vector<Point> newEdge;
+	do
+	{
+		newEdge.clear();
+		for (Point p : edge)
+		{
+			if (!containsPoint(contour, Point(p.x - 1, p.y)) && !containsPoint(region, Point(p.x - 1, p.y)))
+				if (!containsPoint(newEdge, Point(p.x - 1, p.y)))
+					newEdge.push_back(Point(p.x - 1, p.y));
+
+			if (!containsPoint(contour, Point(p.x, p.y - 1)) && !containsPoint(region, Point(p.x, p.y - 1)))
+				if (!containsPoint(newEdge, Point(p.x, p.y - 1)))
+					newEdge.push_back(Point(p.x, p.y - 1));
+
+			if (!containsPoint(contour, Point(p.x + 1, p.y)) && !containsPoint(region, Point(p.x + 1, p.y)))
+				if (!containsPoint(newEdge, Point(p.x + 1, p.y)))
+					newEdge.push_back(Point(p.x + 1, p.y));
+
+			if (!containsPoint(contour, Point(p.x, p.y + 1)) && !containsPoint(region, Point(p.x, p.y + 1)))
+				if (!containsPoint(newEdge, Point(p.x, p.y + 1)))
+					newEdge.push_back(Point(p.x, p.y + 1));
+		}
+		region.insert(region.end(), newEdge.begin(), newEdge.end());
+		edge = newEdge;
+	}
+	while (newEdge.size() > 0);
 	return 0;
 }
-
-void fillNextPixels(vector<Point> pointsToCheck, const vector<Point>& contourVec, vector<Point>& regionPixels)
-{
-	vector<Point> newPointsToCheck;
-	for (Point p : pointsToCheck)
-	{
-		//TODO: Prevent dupes	
-		if (!containsPoint(contourVec, Point(p.x - 1, p.y)) && !containsPoint(regionPixels, Point(p.x - 1, p.y)))
-			if (!containsPoint(newPointsToCheck, Point(p.x - 1, p.y)))
-				newPointsToCheck.push_back(Point(p.x - 1, p.y));
-
-		if (!containsPoint(contourVec, Point(p.x, p.y - 1)) && !containsPoint(regionPixels, Point(p.x, p.y - 1)))
-			if (!containsPoint(newPointsToCheck, Point(p.x, p.y - 1)))
-				newPointsToCheck.push_back(Point(p.x, p.y - 1));
-
-		if (!containsPoint(contourVec, Point(p.x + 1, p.y)) && !containsPoint(regionPixels, Point(p.x + 1, p.y)))
-			if (!containsPoint(newPointsToCheck, Point(p.x + 1, p.y)))
-				newPointsToCheck.push_back(Point(p.x + 1, p.y));
-
-		if (!containsPoint(contourVec, Point(p.x, p.y + 1)) && !containsPoint(regionPixels, Point(p.x, p.y + 1)))
-			if (!containsPoint(newPointsToCheck, Point(p.x, p.y + 1)))
-				newPointsToCheck.push_back(Point(p.x, p.y + 1));
-	}
-
-	for (Point p : newPointsToCheck)
-		regionPixels.push_back(p);
-
-	if (newPointsToCheck.size() != 0)
-		fillNextPixels(newPointsToCheck, contourVec, regionPixels);
-}
-
 
 bool containsPoint(vector<Point> points, Point p)
 {
