@@ -28,12 +28,16 @@ int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>
 int compartMentalise(Mat image_original, string name);
 void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes);
 
+///UNNEEDED, CAN BE REMOVED LATER ON.
+void drawPoints(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours);
+void drawPoints(Mat image_binary, Mat& image_contour, vector<Point>* contour);
+
 bool containsPoint(vector<Point> points, Point p);
-int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels);
+int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels, Mat debugImg);
 
 int main()
 {
-	Mat image_original = imread("./../Images/figuren2.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat image_original = imread("./../Images/floodfilltest2.png", CV_LOAD_IMAGE_COLOR);
 	imshow("Original", image_original);
 
 	Mat image_gray;
@@ -68,7 +72,7 @@ int main()
 	for (vector<Point> contour : *contours)
 	{
 		vector<Point> regionPixel;
-		enclosedPixels(contour, regionPixel);
+		enclosedPixels(contour, regionPixel,image_original);
 		regionPixels->push_back(regionPixel);
 	}
 
@@ -410,7 +414,7 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 /*
  * Start function for recursion
  */
-int enclosedPixels(const vector<Point>& contour, vector<Point>& region)
+int enclosedPixels(const vector<Point>& contour, vector<Point>& region, Mat debugImg)
 {
 	// Find start pixel
 	int maxX = 0, maxY = 0;
@@ -437,7 +441,7 @@ int enclosedPixels(const vector<Point>& contour, vector<Point>& region)
 		if (startPixel.x != -1 && startPixel.y != -1)
 			break;
 	}
-
+	std::cout << "Start of object= " << startPixel << std::endl;
 	region.push_back(startPixel);
 
 	vector<Point> edge;
@@ -464,8 +468,16 @@ int enclosedPixels(const vector<Point>& contour, vector<Point>& region)
 				if (!containsPoint(newEdge, Point(p.x, p.y + 1)))
 					newEdge.push_back(Point(p.x, p.y + 1));
 		}
-		region.insert(region.end(), newEdge.begin(), newEdge.end());
+		//region.insert(region.end(), newEdge.begin(), newEdge.end());
+		for (Point p : newEdge)
+			region.push_back(p);
 		edge = newEdge;
+		Mat drawEdges;
+		//vector<Point> *regionPtr = &region;
+		drawPoints(debugImg, drawEdges,&region);
+		imshow("floodfilldebug", drawEdges);
+		waitKey(30);
+		
 	}
 	while (newEdge.size() > 0);
 	return 0;
@@ -481,4 +493,24 @@ bool containsPoint(vector<Point> points, Point p)
 		}
 	}
 	return false;
+}
+
+void drawPoints(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours)
+{
+	image_contour = image_binary.clone();
+	image_contour = 0;
+	for (vector<Point> vec : *contours)
+	{
+		for (Point e : vec)
+			image_contour.at<uchar>(Point(e.x, e.y)) = 255;
+	}
+}
+
+void drawPoints(Mat image_binary, Mat& image_contour, vector<Point>* contour)
+{
+	image_contour = image_binary.clone();
+	image_contour = 0;
+	for (Point e : *contour)
+		image_contour.at<uchar>(Point(e.x, e.y)) = 255;
+	
 }
