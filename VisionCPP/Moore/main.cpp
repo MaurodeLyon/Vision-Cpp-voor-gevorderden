@@ -25,6 +25,7 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours);
 
 // Fase 2
 int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bounding_boxes);
+int getBoundingBox(const vector<Point>& contour, vector<Point>& bounding_boxes);
 int compartMentalise(Mat image_original, string name);
 void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes);
 
@@ -34,10 +35,11 @@ void drawPoints(Mat image_binary, Mat& image_contour, vector<Point>* contour);
 
 bool containsPoint(vector<Point> points, Point p);
 int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels, Mat debugImg);
+bool isPointInRange(const std::vector<cv::Point>& contour, cv::Point p);
 
 int main()
 {
-	Mat image_original = imread("./../Images/floodfilltest2.png", CV_LOAD_IMAGE_COLOR);
+	Mat image_original = imread("./../Images/basisfiguren.jpg", CV_LOAD_IMAGE_COLOR);
 	imshow("Original", image_original);
 
 	Mat image_gray;
@@ -305,6 +307,57 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 	return -1;
 }
 
+int getBoundingBox(const vector<Point>& contour, vector<Point>& bounding_box)
+{
+	int xmin = 0, ymin = 0, xmax = -1, ymax = -1;
+	Point left_border, top_border, right_border, bottom_border;
+
+	left_border = top_border = right_border = bottom_border = contour[0];
+	xmin = xmax = contour[0].x;
+	ymin = ymax = contour[0].y;
+
+	for (int i = 1; i < contour.size(); i++)
+	{
+		Point point = contour[i];
+
+		if (xmin > point.x)
+		{
+			xmin = point.x;
+			left_border = point;
+		}
+
+		if (xmax < point.x)
+		{
+			xmax = point.x;
+			right_border = point;
+		}
+
+		if (ymin > point.y)
+		{
+			ymin = point.y;
+			top_border = point;
+		}
+
+		if (ymax < point.y)
+		{
+			ymax = point.y;
+			bottom_border = point;
+		}
+	}
+	
+	bounding_box.push_back(left_border);
+	bounding_box.push_back(right_border);
+	bounding_box.push_back(top_border);
+	bounding_box.push_back(bottom_border);
+
+	
+
+
+	return 1;
+
+}
+
+
 // func: delivers bounding Boxes of contours
 // pre: contours contains the contours for which bounding boxes have to be delivered
 // post: boundingBoxes contains all bounding boxes. The index corresponds to the index of contours.
@@ -313,47 +366,9 @@ int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>
 {
 	for (vector<Point> contour : contours)
 	{
-		int xmin = 0, ymin = 0, xmax = -1, ymax = -1;
-		Point left_border, top_border, right_border, bottom_border;
-
-		left_border = top_border = right_border = bottom_border = contour[0];
-		xmin = xmax = contour[0].x;
-		ymin = ymax = contour[0].y;
-
-		for (int i = 1; i < contour.size(); i++)
-		{
-			Point point = contour[i];
-
-			if (xmin > point.x)
-			{
-				xmin = point.x;
-				left_border = point;
-			}
-
-			if (xmax < point.x)
-			{
-				xmax = point.x;
-				right_border = point;
-			}
-
-			if (ymin > point.y)
-			{
-				ymin = point.y;
-				top_border = point;
-			}
-
-			if (ymax < point.y)
-			{
-				ymax = point.y;
-				bottom_border = point;
-			}
-		}
-		vector<Point> bounding_box;
-		bounding_box.push_back(left_border);
-		bounding_box.push_back(right_border);
-		bounding_box.push_back(top_border);
-		bounding_box.push_back(bottom_border);
-		bounding_boxes.push_back(bounding_box);
+		vector<Point> *bounding_box= new vector<Point>();
+		getBoundingBox(contour, *bounding_box);
+		bounding_boxes.push_back(*bounding_box);
 	}
 	return 1;
 }
@@ -417,7 +432,7 @@ void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vecto
 int enclosedPixels(const vector<Point>& contour, vector<Point>& region, Mat debugImg)
 {
 	// Find start pixel
-	int maxX = 0, maxY = 0;
+	/*int maxX = 0, maxY = 0;
 	for (Point p : contour)
 	{
 		if (p.y > maxY) maxY = p.y;
@@ -441,7 +456,30 @@ int enclosedPixels(const vector<Point>& contour, vector<Point>& region, Mat debu
 		if (startPixel.x != -1 && startPixel.y != -1)
 			break;
 	}
-	std::cout << "Start of object= " << startPixel << std::endl;
+	std::cout << "Start of object= " << startPixel << std::endl;*/
+
+	Point startPixel;
+	bool found = false;
+
+	while (!found)
+	{
+		vector<Point> *outerPoints=new vector<Point>();
+		getBoundingBox(contour, *outerPoints);
+
+		/*bounding_box.push_back(left_border);
+		bounding_box.push_back(right_border);
+		bounding_box.push_back(top_border);
+		bounding_box.push_back(bottom_border);*/
+	
+		startPixel.x = rand() % (outerPoints->at(1).x - outerPoints->at(0).x) + outerPoints->at(0).x;
+		startPixel.y = rand() % (outerPoints->at(3).y  - outerPoints->at(2).y) + outerPoints->at(2).y;
+
+		if (isPointInRange(contour, startPixel))
+			found = true;
+		
+
+	}
+
 	region.push_back(startPixel);
 
 	vector<Point> edge;
@@ -513,4 +551,26 @@ void drawPoints(Mat image_binary, Mat& image_contour, vector<Point>* contour)
 	for (Point e : *contour)
 		image_contour.at<uchar>(Point(e.x, e.y)) = 255;
 	
+}
+
+bool isPointInRange(const std::vector<cv::Point>& contour, cv::Point p)
+{
+	bool correct = false;
+	if (containsPoint(contour, p))
+		return false;
+
+	for (int i = 0; i < contour.size(); ++i) {
+
+		int j = (i + 1) % contour.size();
+
+		if ((contour[i].y <= p.y) && (contour[j].y > p.y) || (contour[j].y <= p.y) && (contour[i].y > p.y)) {
+
+			double crossedVal = (contour[j].x - contour[i].x) * (p.y - contour[i].y) / (contour[j].y - contour[i].y) + contour[i].x;
+
+			if (crossedVal < p.x)
+				correct = !correct;
+		}
+	}
+
+	return correct;
 }
