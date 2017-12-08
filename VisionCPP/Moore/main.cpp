@@ -51,7 +51,7 @@ int main()
 	show16SImageStretch(image_binary16S, "Binary 16S");
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContoursRecursive(image_binary16S, *contours);
+	allContours(image_binary16S, *contours);
 
 	Mat contoursMat;
 	drawPoints(image_binary, contoursMat, contours);
@@ -370,7 +370,7 @@ int compartMentalise(Mat image_original, string name)
 	image_binary.convertTo(image_binary16S, CV_16S);
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContoursRecursive(image_binary16S, *contours);
+	allContours(image_binary16S, *contours);
 
 	Mat boundingBoxes = image_original.clone();
 
@@ -402,7 +402,7 @@ int compartMentaliseFloodFill(Mat image_original, string name)
 	image_binary.convertTo(image_binary16S, CV_16S);
 
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContoursRecursive(image_binary16S, *contours);
+	allContours(image_binary16S, *contours);
 
 	vector<vector<Point>>* bounding_boxes = new vector<vector<Point>>();
 
