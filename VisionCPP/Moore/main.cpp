@@ -18,7 +18,7 @@ Point getDirectionPoint(Point p, int direction_number);
 int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours);
 void nextPoint(Mat image_binary, vector<Point>& contour, Point2d current_pixel, int current_direction);
 void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel);
-void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours);
+void drawPoints(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours);
 double bendingEnergy(Mat binaryImage, vector<Point>& contourVec);
 int allContours(Mat image_binary, vector<vector<Point>>& contours);
 
@@ -26,6 +26,7 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours);
 // Fase 2
 int allBoundingBoxes(const vector<vector<Point>>& contours, vector<vector<Point>>& bounding_boxes);
 int compartMentalise(Mat image_original, string name);
+int compartMentaliseFloodFill(Mat image_original, string name);
 void drawBoundingBox(Mat image_original, Mat& image_bounding_boxes, vector<vector<Point>>* bounding_boxes);
 
 bool containsPoint(vector<Point> points, Point p);
@@ -33,7 +34,8 @@ int enclosedPixels(const vector<Point>& contourVec, vector<Point>& regionPixels)
 
 int main()
 {
-	Mat image_original = imread("./../Images/figuren2.jpg", CV_LOAD_IMAGE_COLOR);
+
+	Mat image_original = imread("./../Images/square.bmp", CV_LOAD_IMAGE_COLOR);
 	imshow("Original", image_original);
 
 	Mat image_gray;
@@ -52,7 +54,7 @@ int main()
 	allContoursRecursive(image_binary16S, *contours);
 
 	Mat contoursMat;
-	drawContours(image_binary, contoursMat, contours);
+	drawPoints(image_binary, contoursMat, contours);
 	imshow("contours", contoursMat);
 
 	vector<vector<Point>>* bounding_boxes = new vector<vector<Point>>();
@@ -63,6 +65,7 @@ int main()
 	imshow("boundingBoxes", image_bounding_boxes);
 
 	compartMentalise(image_original, "figuur");
+ 	compartMentaliseFloodFill(image_original, "figuurFF");
 
 	vector<vector<Point>>* regionPixels = new vector<vector<Point>>();
 	for (vector<Point> contour : *contours)
@@ -73,7 +76,7 @@ int main()
 	}
 
 	Mat region;
-	drawContours(image_binary, region, regionPixels);
+	drawPoints(image_binary, region, regionPixels);
 	imshow("region", region);
 	waitKey(0);
 }
@@ -119,7 +122,7 @@ void getContour(Mat image_binary, vector<Point>& contour, Point2d first_pixel)
 /*
  * function returns image with the contours if the binary image
  */
-void drawContours(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours)
+void drawPoints(Mat image_binary, Mat& image_contour, vector<vector<Point>>* contours)
 {
 	image_contour = image_binary.clone();
 	image_contour = 0;
@@ -387,6 +390,57 @@ int compartMentalise(Mat image_original, string name)
 	return 1;
 }
 
+int compartMentaliseFloodFill(Mat image_original, string name)
+{
+	Mat image_gray;
+	cvtColor(image_original, image_gray, CV_BGR2GRAY);
+
+	Mat image_binary;
+	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
+
+	Mat image_binary16S;
+	image_binary.convertTo(image_binary16S, CV_16S);
+
+	vector<vector<Point>>* contours = new vector<vector<Point>>();
+	allContoursRecursive(image_binary16S, *contours);
+
+	vector<vector<Point>>* bounding_boxes = new vector<vector<Point>>();
+
+	allBoundingBoxes(*contours, *bounding_boxes);
+	vector<vector<Point>>* regionPixels = new vector<vector<Point>>();
+	for (vector<Point> contour : *contours)
+	{
+		vector<Point> regionPixel;
+		enclosedPixels(contour, regionPixel);
+		regionPixels->push_back(regionPixel);
+	}
+
+
+	for (int i = 0; i < bounding_boxes->size(); i++)
+	{
+		vector<Point> bounding_box = bounding_boxes->at(i);
+		Rect rect = Rect(bounding_box[0].x, bounding_box[2].y, bounding_box[1].x - bounding_box[0].x + 1,
+			bounding_box[3].y - bounding_box[2].y + 1);
+		Mat image_roi = image_original(rect);
+		Mat canvas = image_roi.clone();
+		canvas = 0;
+		///TODO: Make sure the index of bounding_boxes and regionPixels are synched (should already be,
+		///but not guarenteed)
+		std::vector<Point> currentRegion=regionPixels->at(i);
+		for (Point p : currentRegion)
+		{
+			canvas.at<cv::Vec3b>(p.y, p.x)[0] = image_roi.at<cv::Vec3b>(p.y, p.x)[0];
+			canvas.at<cv::Vec3b>(p.y, p.x)[1] = image_roi.at<cv::Vec3b>(p.y, p.x)[1];
+			canvas.at<cv::Vec3b>(p.y, p.x)[2] = image_roi.at<cv::Vec3b>(p.y, p.x)[2];
+
+		}
+
+		imwrite("./../Images/trainingset/" + name + "_" + to_string(i) + ".jpg", canvas);
+	}
+	return 1;
+
+}
+
 /*
  *  outputs an image which displays the bounding box
  */
@@ -437,7 +491,6 @@ int enclosedPixels(const vector<Point>& contour, vector<Point>& region)
 		if (startPixel.x != -1 && startPixel.y != -1)
 			break;
 	}
-
 	region.push_back(startPixel);
 
 	vector<Point> edge;
@@ -451,6 +504,7 @@ int enclosedPixels(const vector<Point>& contour, vector<Point>& region)
 			if (!containsPoint(contour, Point(p.x - 1, p.y)) && !containsPoint(region, Point(p.x - 1, p.y)))
 				if (!containsPoint(newEdge, Point(p.x - 1, p.y)))
 					newEdge.push_back(Point(p.x - 1, p.y));
+
 
 			if (!containsPoint(contour, Point(p.x, p.y - 1)) && !containsPoint(region, Point(p.x, p.y - 1)))
 				if (!containsPoint(newEdge, Point(p.x, p.y - 1)))
