@@ -24,6 +24,23 @@ int main(int argc, char** argv)
 {
 	// IT, OT: input trainingset, output trainingset
 	Mat ITset, OTset;
+	ITset = (Mat_<double>(8, 3) << 0, 0, 0, 
+		0, 0, 1, 
+		1, 0, 0,  
+		1, 0, 1, 
+		0, 1, 0,  
+		0, 1, 1,  
+		1, 1, 0,  
+		1, 1, 1 );
+
+	OTset = (Mat_<double>(8, 1) << 0, 
+		1,
+		0,
+		1, 
+		0, 
+		1,
+		1, 
+		1);
 
 	// V0, W0   : weightfactor matrices
 	// dV0, dW0 : weightfactor correction matrices
@@ -35,7 +52,7 @@ int main(int argc, char** argv)
 	int hiddenNeurons = 2;
 
 	cout << endl << "Load testtrainingset..." << endl << endl;
-	loadTrainingSet1(ITset, OTset);
+	//loadTrainingSet1(ITset, OTset);
 	//loadBinaryTrainingSet1(ITset, OTset);
 
 	cout << "Training Input " << endl << endl;
@@ -112,7 +129,7 @@ int main(int argc, char** argv)
 	// druk voor elke input vector uit de trainingset de output vector uit trainingset af 
 	// tezamen met de output vector die het getrainde BPN (zie V0, W0) genereerd bij de 
 	// betreffende input vector.
-	cout << setw(16) << " " << "Training Input" << setw(12) << "|" << " Expected Output "
+	cout << setw(1) << " " << "Training Input" << setw(12) << "|" << " Expected Output "
 		<< setw(1) << "|" << " Output BPN " << setw(6) << "|" << endl << endl;
 	for (int row = 0; row < ITset.rows; row++) {
 
