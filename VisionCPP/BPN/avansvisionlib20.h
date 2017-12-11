@@ -1,12 +1,14 @@
 // avansvisionlib - Growing Visionlibrary of Avans based on OpenCV 2.4.10 
 // Goal: deep understanding of vision algorithms by means of developing own (new) algorithms.
+//       deep understanding of neural networks
 // 
-// Copyright Jan Oostindie, basic version 0.2 dd 15-9-2016. Contains basic functions to perform calculations on matrices/images of class Mat.
-// Including BLOB labeling functions
-//
+// Copyright Jan Oostindie, version 2.0 dd 5-12-2016 (= Neural Network (BPN) added to version 1.0 dd 5-11-2016.) 
+//      Contains basic functions to perform calculations on matrices/images of class Mat. Including BLOB labeling functions 
+//      Contains a BPN neural network. 
 // Note: Students of Avans are free to use this library in projects and for own vision competence development. Others may ask permission to use it by means 
 // of sending an email to Jan Oostindie, i.e. jac.oostindie@avans.nl
 
+//#include "stdafx.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv/cv.h>
@@ -16,7 +18,7 @@
 using namespace cv;
 using namespace std;
 
-// remark: a functioncall with a Mat-object parameter is a call by reference
+// remark: a function call with a Mat-object parameter is a call by reference
 
 /*********************** PROTOTYPES of the function library ************************/
 
@@ -131,7 +133,7 @@ void stretchImage(Mat m, _int16 minPixelValue, _int16 maxPixelValue);
 
 // func: shows a 16S image on the screen. All values mapped on the interval 0-255 
 /// pre: m is a 16S image (depth 16 bits, signed)
-void show16SImageStretch(Mat m, string windowTitle );
+void show16SImageStretch(Mat m, string windowTitle = "show16SImageStretch");
 
 
 // func: shows a 16S image on the screen. All values clipped to the interval 0-255
@@ -231,3 +233,104 @@ int labelBLOBsInfo(Mat binaryImage, Mat & labeledImage,
 	vector<Point2d *> & firstpixelVec, vector<Point2d *> & posVec,
 	vector<int> & areaVec,
 	int threshAreaMin = 1, int threshAreaMax = INT_MAX);
+
+
+/*****************************************************************************************************************************************************/
+/*BEGIN********************************************** BACK PROPAGATION NEURAL NETWORK ****************************************************************/
+/*****************************************************************************************************************************************************/
+
+// func: loads an example of a training set
+// pre: true
+// post: ITset input training set. Each row contains a number of features.
+//      OTset output training set. Each row contains the expected output belonging to the corresponding row of features in the input training set.
+//
+// TRAININGSET:  I0 because of bias V0 
+//
+// setnr     I0     I1     I2    I3    I4    O1   O2
+//   1	     1.0    0.4   -0.7   0.1   0.71  0.0  0.0
+//   2       1.0    0.3   -0.5   0.05  0.34  0.0  0.0
+//   3       1.0    0.6    0.1   0.3   0.12  0.0  1.0
+//   4       1.0    0.2    0.4   0.25  0.34  0.0  1.0
+//   5		 1.0   -0.2    0.12  0.56  1.0   1.0  0.0
+//   6		 1.0	0.1   -0.34  0.12  0.56  1.0  0.0
+//   7		 1.0   -0.6    0.12  0.56  1.0   1.0  1.0
+//   8		 1.0	0.56  -0.2   0.12  0.56  1.0  1.0
+void loadTrainingSet1(Mat & ITset, Mat & OTset);
+
+
+// func: loads an example of a training set in which only binary numbers are used.
+// pre: true
+// post: ITset input training set. Each row contains a number of binary numbers.
+//       OTset output training set. Each row contains the expected output belonging to the corresponding row of binary numbers in the input training set.
+//
+// TRAININGSET binary function O1 = (I1 OR I2) AND I3 
+// without bias
+// setnr    I1   I2    I3   O1   
+//   1	     0    0    0    0 	
+//   2       0    0    1    0 
+//   3       0    1    0    0              
+//   4       0    1    1    1
+//   5	     1    0    0    0 	
+//   6       1    0    1    1 
+//   7       1    1    0    0
+//   8       1    1    1    1
+void loadBinaryTrainingSet1(Mat & ITset, Mat & OTset);
+
+
+// func: Initialization of the (1) weigthmatrices V0 and W0 and (2) of the delta matrices dV0 and dW0. 
+// pre: inputNeurons, hiddenNeurons and outputNeurons define the Neural Network. 
+//      (from these numbers the dimensions of the weightmatrices can be determined)
+// post: V0 and W0 have random values between 0.1 and 0.9
+void initializeBPN(int inputNeurons, int hiddenNeurons, int outputNeurons,
+	Mat & V0, Mat & dV0, Mat & W0, Mat & dW0);
+
+
+// Test of a BPN with all values defined explicitly. 
+// pre: true
+// post: IT is the input training set ; OT is the corresponding output training set. ; V0, W0 are the weight matrices of a BPN with 1 hidden layer;
+//       dV0, dW0 are the initial delta matrices of the weight factor matrices.
+void testBPN(Mat & IT, Mat & OT, Mat & V0, Mat & dV0, Mat & W0, Mat & dW0);
+
+// func: Given an inputvector of the inputlayer and a weightmatrix V calculates the outputvector of the hiddenlayer
+// pre: II is input of the inputlayer. V = matrix with weightfactors between inputlayer and the hiddenlayer.
+// post: OH is the outputvector of the hidden layer
+void calculateOutputHiddenLayer(Mat II, Mat V, Mat & OH);
+
+
+// func: Given the outputvector of the hiddenlayer and a weigthmatrix W calculates the outputvector of the outputlayer
+// pre: OH is the outputvector of the hiddenlayer. W = matrix with weightfactors between hiddenlayer and the outputlayer.
+// post: OO is the outputvector of the output layer
+void calculateOutputBPN(Mat OH, Mat W, Mat & OO);
+
+
+// func: Calculates the total error Error = 1/2*Sigma(OTi-OOi)^2. 
+//       OTi is the expected output according to the trainingvector i
+//       OOi is the calculated output from the current neural network of the traininngvector i
+// pre: OO is the outputvector of the outputlayer. OT is the expected outputvector from the trainingset 
+// post: OO is the outputvector of the output layer
+void calculateOutputBPNError(Mat OO, Mat OT, double & outputError);
+
+
+// func: calculates the updates of the weight factor matrices V0 and W0 on basics of the calculated output matrix and the expected output matrix.
+//       A back propagation algorithm is used.
+// pre: OT is the expected outputvector from the trainingset ; OO is the calculated outputvector of the outputlayer ; 
+//      OH is the calculated output of the hiddenlayer ; OI is the output of the inputlayer (normaly equal to the input of the inputlayer)
+//      V0 is the weight matrix between the input layer and the hidden layer ; W0 is the weight matrix between the hiddenlayer and the output layer.
+//      dV0, dW0 are the correction matrices.
+// post: V is the adapted weight matrix between the inputlayer and the hidden layer ; W is the weight matrix between the hiddenlayer and the output layer.
+void adaptVW(Mat OT, Mat OO, Mat OH, Mat OI, Mat W0, Mat dW0, Mat V0, Mat dV0, Mat & W, Mat & V,
+	double ALPHA = 1.0, double ETHA = 0.6);
+
+
+// func: given an inputvector calculates the output of a BPN with weigth matrices V and W. 
+// pre:  II is the input vector of the BPN ; 
+//       V is the weight factor matrix between the input layer and the hidden layer 
+//       W is the weight factor matrix between the hidden layer and the output layer 
+// return: output vector
+Mat BPN(Mat II, Mat V, Mat W);
+
+
+/*****************************************************************************************************************************************************/
+/*END********************************************** BACK PROPAGATION NEURAL NETWORK ******************************************************************/
+/*****************************************************************************************************************************************************/
+

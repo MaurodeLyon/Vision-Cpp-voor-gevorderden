@@ -1,14 +1,14 @@
 // avansvisionlib - Growing Visionlibrary of Avans based on OpenCV 2.4.10 
 // Goal: deep understanding of vision algorithms by means of developing own (new) algorithms.
+//       deep understanding of neural networks
 // 
-// Copyright Jan Oostindie, basic version 1.0 dd 8-11-2016. Contains basic functions to perform calculations on matrices/images of class Mat.
-// Including BLOB labeling functions
-//
+// Copyright Jan Oostindie, version 2.0 dd 5-12-2016 (= Neural Network (BPN) added to version 1.0 dd 5-11-2016.) 
+//      Contains basic functions to perform calculations on matrices/images of class Mat. Including BLOB labeling functions 
+//      Contains a BPN neural network. 
 // Note: Students of Avans are free to use this library in projects and for own vision competence development. Others may ask permission to use it by means 
 // of sending an email to Jan Oostindie, i.e. jac.oostindie@avans.nl
 
 #include "stdafx.h"
-
 #include <math.h>
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
@@ -289,7 +289,7 @@ void show16SImageStretch(Mat m, string windowTitle) {
 	m.copyTo(mCopy);
 	stretchImage(mCopy, 0, 255);
 	mCopy.convertTo(mCopy, CV_8U);
-//	namedWindow(windowTitle, CV_WINDOW_AUTOSIZE);
+	//	namedWindow(windowTitle, CV_WINDOW_AUTOSIZE);
 	imshow(windowTitle, mCopy);
 	waitKey(0);
 } // show16SImage
@@ -301,7 +301,7 @@ void show16SImageClip(Mat m, string windowTitle) {
 	Mat mCopy;
 	m.copyTo(mCopy);
 	mCopy.convertTo(mCopy, CV_8U);
-//	namedWindow("show16SImageClip", CV_WINDOW_AUTOSIZE);
+	//	namedWindow("show16SImageClip", CV_WINDOW_AUTOSIZE);
 	imshow(windowTitle, mCopy);
 	waitKey(0);
 } // show16SImage
@@ -318,21 +318,21 @@ void gammaCorrection(Mat image, float gamma) {
 	//	dst = src.clone();
 	const int channels = image.channels();
 	switch (channels) {
-		case 1: {
-					MatIterator_<uchar> it, end;
-					for (it = image.begin<uchar>(), end = image.end<uchar>(); it != end; it++)
-						*it = lut[(*it)];
-					break;
-		}
-		case 3: {
-					MatIterator_<Vec3b> it, end;
-					for (it = image.begin<Vec3b>(), end = image.end<Vec3b>(); it != end; it++) {
-						(*it)[0] = lut[((*it)[0])];
-						(*it)[1] = lut[((*it)[1])];
-						(*it)[2] = lut[((*it)[2])];
-					}
-					break;
-		}
+	case 1: {
+				MatIterator_<uchar> it, end;
+				for (it = image.begin<uchar>(), end = image.end<uchar>(); it != end; it++)
+					*it = lut[(*it)];
+				break;
+	}
+	case 3: {
+				MatIterator_<Vec3b> it, end;
+				for (it = image.begin<Vec3b>(), end = image.end<Vec3b>(); it != end; it++) {
+					(*it)[0] = lut[((*it)[0])];
+					(*it)[1] = lut[((*it)[1])];
+					(*it)[2] = lut[((*it)[2])];
+				}
+				break;
+	}
 	} // switch
 } // gammaCorrection
 
@@ -344,19 +344,19 @@ void gammaCorrection(Mat image, float gamma) {
 // pre : binaryImage has depth 16 bits signed int. Contains only values 0 and 1.
 // return_matrix: All "1" are made "-1" meaning value 1 and unvisited.
 Mat makeAdmin(Mat binaryImage) {
-	Mat result = Mat_<_int16>(binaryImage.rows+2, binaryImage.cols+2);
+	Mat result = Mat_<_int16>(binaryImage.rows + 2, binaryImage.cols + 2);
 
 	// eerste rij 0 maken
-    for (int col = 0; col < result.cols; col++) 
-       setEntryImage(result,0,col,0);
+	for (int col = 0; col < result.cols; col++)
+		setEntryImage(result, 0, col, 0);
 
 	// binaryImage copieren naar admin waarbij een 1 steeds wordt omgezet naar -1.
-	for (int row = 1; row < (result.rows-1); row++) {
+	for (int row = 1; row < (result.rows - 1); row++) {
 
 		// 0 vooraan de rij zetten
-		setEntryImage(result,row,0,0);
+		setEntryImage(result, row, 0, 0);
 
-        // rij binaryImage copieren 
+		// rij binaryImage copieren 
 		_int16 value;
 		for (int col = 1; col < result.cols - 1; col++) {
 			value = getEntryImage(binaryImage, row - 1, col - 1);
@@ -370,7 +370,7 @@ Mat makeAdmin(Mat binaryImage) {
 
 	// laatste rij 0 maken
 	for (int col = 0; col < result.cols; col++)
-		setEntryImage(result, result.rows-1, col, 0);
+		setEntryImage(result, result.rows - 1, col, 0);
 
 	return result;
 } // makeAdmin
@@ -383,26 +383,26 @@ Mat makeAdmin(Mat binaryImage) {
 // return_value: 1 next blob found ; starting position is (row,col)
 //           	 0 no blob found   ; (row, col) == (-1, -1)                   
 bool findNextBlob(Mat admin, int & row, int & col) {
-	
+
 	bool found = false;
 
 	// zoeken in de huidige rij
 	for (int currCol = col; (currCol < (admin.cols - 1)) & !found; currCol++)
-		if (getEntryImage(admin, row, currCol) == -1) {
-			found = true;
-		    // row unchanged
-			col = currCol;
-		}
-    
-    // zoeken vanaf de volgende rij
-	for (int currRow = row+1; (currRow < (admin.rows-1)) &!found; currRow++) 
-    	for (int currCol = 1; (currCol < (admin.cols-1)) & !found; currCol++)
-			if (getEntryImage(admin, currRow, currCol) == -1) {
-				found = true;
-				row = currRow;
-				col = currCol;
-			}
-	
+	if (getEntryImage(admin, row, currCol) == -1) {
+		found = true;
+		// row unchanged
+		col = currCol;
+	}
+
+	// zoeken vanaf de volgende rij
+	for (int currRow = row + 1; (currRow < (admin.rows - 1)) &!found; currRow++)
+	for (int currCol = 1; (currCol < (admin.cols - 1)) & !found; currCol++)
+	if (getEntryImage(admin, currRow, currCol) == -1) {
+		found = true;
+		row = currRow;
+		col = currCol;
+	}
+
 	if (!found) {
 		row = -1;
 		col = -1;
@@ -415,15 +415,15 @@ bool findNextBlob(Mat admin, int & row, int & col) {
 //          7  0  1
 //          6  X  2 
 //          5  4  3
-_int16 getEntryNeighbour(const Mat & admin , int x, int y, int nr) {
+_int16 getEntryNeighbour(const Mat & admin, int x, int y, int nr) {
 	switch (nr) {
-	case 0: return getEntryImage(admin, x - 1, y    ); break;
+	case 0: return getEntryImage(admin, x - 1, y); break;
 	case 1: return getEntryImage(admin, x - 1, y + 1); break;
-	case 2: return getEntryImage(admin, x    , y + 1); break;
+	case 2: return getEntryImage(admin, x, y + 1); break;
 	case 3: return getEntryImage(admin, x + 1, y + 1); break;
-	case 4: return getEntryImage(admin, x + 1,     y); break;
+	case 4: return getEntryImage(admin, x + 1, y); break;
 	case 5: return getEntryImage(admin, x + 1, y - 1); break;
-	case 6: return getEntryImage(admin, x,     y - 1); break;
+	case 6: return getEntryImage(admin, x, y - 1); break;
 	case 7: return getEntryImage(admin, x - 1, y - 1); break;
 	default: cout << "ERROR getEntryNeighbour " << endl;
 	}
@@ -433,11 +433,11 @@ _int16 getEntryNeighbour(const Mat & admin , int x, int y, int nr) {
 bool moreNext1(const Mat & admin, int x, int y) {
 	int cnt1 = 0;
 	bool more = false;
-	for (int nr = 0; (nr <= 7) & !more; nr++) 
-		if (getEntryNeighbour(admin, x, y, nr) == -1) {
-			cnt1++;
-			if (cnt1 > 1) more = true;
-		}
+	for (int nr = 0; (nr <= 7) & !more; nr++)
+	if (getEntryNeighbour(admin, x, y, nr) == -1) {
+		cnt1++;
+		if (cnt1 > 1) more = true;
+	}
 	return more;
 } // moreNext1
 
@@ -449,7 +449,7 @@ bool moreNext1(const Mat & admin, int x, int y) {
 void findNext1(Mat admin, int & currX, int & currY, int & next1) {
 	int rotX, rotY;
 
-	rotX = currX - 1 ; rotY = currY    ; //0 
+	rotX = currX - 1; rotY = currY; //0 
 	if (getEntryImage(admin, rotX, rotY) == -1) next1 = 0;
 	else {
 		rotX = currX - 1; rotY = currY + 1; //1
@@ -481,7 +481,7 @@ void findNext1(Mat admin, int & currX, int & currY, int & next1) {
 		} // 1
 	} //0
 	if (next1 >= 0) {
-		currX = rotX; 
+		currX = rotX;
 		currY = rotY;
 	}
 } // findNext1
@@ -509,7 +509,7 @@ int labelIter(Mat & admin, int row, int col, int blobNr) {
 	//  blobNr * 10 + 8
 
 	int x = row, y = col;
-	setEntryImage(admin, x, y, blobNr*10 + 8);
+	setEntryImage(admin, x, y, blobNr * 10 + 8);
 
 	int next1 = -999;
 	int area = 1;
@@ -526,7 +526,7 @@ int labelIter(Mat & admin, int row, int col, int blobNr) {
 			findNext1(admin, x, y, next1);
 
 			if (next1 >= 0) {
-				setEntryImage(admin, x, y, blobNr*10 + next1);
+				setEntryImage(admin, x, y, blobNr * 10 + next1);
 				area++;
 			}
 			else {
@@ -561,7 +561,7 @@ int labelIter(Mat & admin, int row, int col, int blobNr) {
 //        The disadvantagae however is that the algorithm is more complicated an maybe a little bit
 //        slower than the recursive variant. 
 int labelIterInfo(Mat & admin, int topX, int topY, int blobNr,
-				  int & xGravity, int & yGravity) {
+	int & xGravity, int & yGravity) {
 
 	//  Every visited pixel is labeled with:
 	//  blobNr*10 + <relative position to the parent >
@@ -619,7 +619,7 @@ int labelIterInfo(Mat & admin, int topX, int topY, int blobNr,
 	} // while (more)
 	xGravity /= area;
 	yGravity /= area;
-   return area;
+	return area;
 } // labelIterInfo
 
 
@@ -659,12 +659,12 @@ int labelRecursive(Mat & admin, int row, int col, int blobNr) {
 // post: labeledImage: binary 8-connected pixels with value 1 in binaryImage are 
 //       labeled with the number of the object they belong to.
 void retrieveLabeledImage(const Mat & admin, Mat & labeledImage) {
-	labeledImage = Mat_<_int16>(admin.rows-2,admin.cols-2);
+	labeledImage = Mat_<_int16>(admin.rows - 2, admin.cols - 2);
 
-	for (int row = 1; row < admin.rows-1; row++) {
-		for (int col = 1; col < admin.cols-1; col++) {
-			setEntryImage(labeledImage, row-1,col-1, 
-				          getEntryImage(admin, row, col) / 10);
+	for (int row = 1; row < admin.rows - 1; row++) {
+		for (int col = 1; col < admin.cols - 1; col++) {
+			setEntryImage(labeledImage, row - 1, col - 1,
+				getEntryImage(admin, row, col) / 10);
 		}
 	}
 } // retrieveLabeledImage
@@ -690,9 +690,9 @@ int labelBLOBs(Mat binaryImage, Mat & labeledImage) {
 	int blobNr = 0;
 
 	// label alle BLOBs met een volgnummer
-	while ((row > 0) & (row < (admin.rows - 1)) &	
-		   (col > 0) & (col < (admin.cols - 1)))
-		if (findNextBlob(admin, row, col)) labelIter(admin, row, col, ++blobNr);
+	while ((row > 0) & (row < (admin.rows - 1)) &
+		(col > 0) & (col < (admin.cols - 1)))
+	if (findNextBlob(admin, row, col)) labelIter(admin, row, col, ++blobNr);
 
 	retrieveLabeledImage(admin, labeledImage);
 
@@ -705,12 +705,12 @@ int labelBLOBs(Mat binaryImage, Mat & labeledImage) {
 //      of the blob to be removed.
 void removeBLOB(Mat & admin, int blobNr) {
 	_int16 value;
-	for (int row = 1; row < admin.rows-2; row++) 
-		for (int col = 1; col < admin.cols-2; col++) {
-			value = getEntryImage(admin, row, col);
-			while (value > 10) value /= 10;
-			if (value == blobNr) setEntryImage(admin, row, col, 0);
-	    }
+	for (int row = 1; row < admin.rows - 2; row++)
+	for (int col = 1; col < admin.cols - 2; col++) {
+		value = getEntryImage(admin, row, col);
+		while (value > 10) value /= 10;
+		if (value == blobNr) setEntryImage(admin, row, col, 0);
+	}
 } // removeBLOB
 
 // func: labeling of all blobs in a binary image with a area in [threhAreaMin,threhAreaMax]. Default
@@ -744,17 +744,17 @@ int labelBLOBsInfo(Mat binaryImage, Mat & labeledImage,
 	// label alle BLOBs met een volgnummer
 	while ((row > 0) & (row < (admin.rows - 1)) &
 		(col > 0) & (col < (admin.cols - 1)))
-	
-		if (findNextBlob(admin, row, col)) {
 
-			area = labelIterInfo(admin, row, col, ++blobNr, xGravity, yGravity);
-			
-			if ((area >= threshAreaMin) & (area <= threshAreaMax)) {
-				firstpixelVec.push_back(new Point2d(row - 1, col - 1));
-				posVec.push_back(new Point2d(xGravity-1, yGravity-1));
-				areaVec.push_back(area);
-			}
-			else removeBLOB(admin, blobNr--);
+	if (findNextBlob(admin, row, col)) {
+
+		area = labelIterInfo(admin, row, col, ++blobNr, xGravity, yGravity);
+
+		if ((area >= threshAreaMin) & (area <= threshAreaMax)) {
+			firstpixelVec.push_back(new Point2d(row - 1, col - 1));
+			posVec.push_back(new Point2d(xGravity - 1, yGravity - 1));
+			areaVec.push_back(area);
+		}
+		else removeBLOB(admin, blobNr--);
 	}
 
 	retrieveLabeledImage(admin, labeledImage);
@@ -762,3 +762,288 @@ int labelBLOBsInfo(Mat binaryImage, Mat & labeledImage,
 	// laatste volgnummer is gelijk aan het aantal gevonden blobs
 	return blobNr;
 } // labelBLOBsInfo
+
+
+/*BEGIN********************************************** BACK PROPAGATION NEURAL NETWORK ****************************************************************/
+
+// TRAININGSET:  I0 because of bias V0 
+//
+// setnr     I0     I1     I2    I3    I4    O1   O2
+//   1	     1.0    0.4   -0.7   0.1   0.71  0.0  0.0
+//   2       1.0    0.3   -0.5   0.05  0.34  0.0  0.0
+//   3       1.0    0.6    0.1   0.3   0.12  0.0  1.0
+//   4       1.0    0.2    0.4   0.25  0.34  0.0  1.0
+//   5		 1.0   -0.2    0.12  0.56  1.0   1.0  0.0
+//   6		 1.0	0.1   -0.34  0.12  0.56  1.0  0.0
+//   7		 1.0   -0.6    0.12  0.56  1.0   1.0  1.0
+//   8		 1.0	0.56  -0.2   0.12  0.56  1.0  1.0
+
+void loadTrainingSet1(Mat & ITset, Mat & OTset) {
+
+	// input of trainingset
+	// remark: nummber of columns == number of inputneurons of the BPN
+	ITset = (Mat_<double>(8, 5) <<
+		1, 0.4, -0.7, 0.1, 0.71,
+		1, 0.3, -0.5, 0.05, 0.34,
+		1, 0.6, 0.1, 0.3, 0.12,
+		1, 0.2, 0.4, 0.25, 0.34,
+		1, -0.2, 0.12, 0.56, 1.0,
+		1, 0.1, -0.34, 0.12, 0.56,
+		1, 0.6, 0.12, 0.56, 1.0,
+		1, 0.56, -0.2, 0.12, 0.56);
+
+	// output of trainingset
+	// remark: nummber of columns == number of outputneurons of the BPN
+	OTset = (Mat_<double>(8, 2) <<
+		0, 0,
+		0, 0,
+		0, 1,
+		0, 1,
+		1, 0,
+		1, 0,
+		1, 1,
+		1, 1);
+} // loadTestTrainingSet1
+
+
+// TRAININGSET binary function O1 = (I1 OR I2) AND I3 
+// without bias
+// setnr    I1   I2    I3   O1   
+//   1	     0    0    0    0 	
+//   2       0    0    1    0 
+//   3       0    1    0    0              
+//   4       0    1    1    1
+//   5	     1    0    0    0 	
+//   6       1    0    1    1 
+//   7       1    1    0    0
+//   8       1    1    1    1
+void loadBinaryTrainingSet1(Mat & ITset, Mat & OTset) {
+
+	// input of trainingset (without bias)
+	// remark: nummber of columns == number of inputneurons of the BPN
+	ITset = (Mat_<double>(8, 3) <<
+		0, 0, 0,
+		0, 0, 1,
+		0, 1, 0,
+		0, 1, 1,
+		1, 0, 0,
+		1, 0, 1,
+		1, 1, 0,
+		1, 1, 1);
+
+	// output of trainingset
+	// remark: nummber of columns == number of outputneurons of the BPN
+	OTset = (Mat_<double>(8, 1) <<
+		0,
+		0,
+		0,
+		1,
+		0,
+		1,
+		0,
+		1);
+
+} // loadBinaryTrainingSet1
+
+
+// func: Initialization of the (1) weigthmatrices V0 and W0 and (2) of the delta matrices dV0 and dW0. 
+// pre: inputNeurons, hiddenNeurons and outputNeurons define the Neural Network. 
+//      From this numbers the dimensions of the weightmatrices can be determined.
+// post: V0 and W0 have random values between 0.1 and 0.9
+void initializeBPN(int inputNeurons, int hiddenNeurons, int outputNeurons,
+	Mat & V0, Mat & dV0, Mat & W0, Mat & dW0) {
+
+	// Instellen van alle weegfactoren met een random waarde
+	V0 = Mat_<double>(inputNeurons, hiddenNeurons);
+	W0 = Mat_<double>(hiddenNeurons, outputNeurons);
+	setRandomValue(V0, 0.1, 0.9);
+	setRandomValue(W0, 0.1, 0.9);
+
+	// Initiele aanpassing van de weegfactoren W
+	dV0 = Mat_<double>(inputNeurons, hiddenNeurons);
+	dW0 = Mat_<double>(hiddenNeurons, outputNeurons);
+	setValue(dV0, 0);
+	setValue(dW0, 0);
+} // initializeBPN
+
+// Test of a BPN with all values defined explicitly 
+void testBPN(Mat & IT, Mat & OT, Mat & V0, Mat & dV0, Mat & W0, Mat & dW0) {
+
+	// input of trainingset
+	// remark: number of columns == number of inputneurons of the BPN
+	IT = (Mat_<double>(5, 2) <<
+		0.4, -0.7,
+		0.3, -0.5,
+		0.6, 0.1,
+		0.2, 0.4,
+		0.1, -0.2);
+
+	// output of trainingset
+	// remark: nummber of columns == number of outputneurons of the BPN
+	OT = (Mat_<double>(5, 1) <<
+		0.1,
+		0.05,
+		0.3,
+		0.25,
+		0.12);
+
+	// STEP2:  Initializing the weights
+	V0 = (Mat_<double>(2, 2) <<
+		0.1, 0.4,
+		-0.2, 0.2);
+
+	W0 = (Mat_<double>(2, 1) <<
+		0.2,
+		-0.5);
+
+	// Initiele aanpassing van de weegfactoren W
+	dW0 = (Mat_<double>(2, 1) <<
+		0.0,
+		0.0);
+
+	// Initiele aanpassing van de weegfactoren V
+	dV0 = (Mat_<double>(2, 2) <<
+		0.0, 0.0,
+		0.0, 0.0);
+
+} //  testBPN
+
+
+
+
+// func: Given an inputvector of the inputlayer and a weightmatrix V calculates the outputvector of the hiddenlayer
+// pre: II is input of the inputlayer. V = matrix with weightfactors between inputlayer and the hiddenlayer.
+// post: OH is the outputvector of the hidden layer
+void calculateOutputHiddenLayer(Mat II, Mat V, Mat & OH) {
+
+	// STEP1: Output inputlayer := Input inputlayer    
+	Mat OI;
+	II.copyTo(OI);
+
+	// STEP2:  Initializing the weights, already done, see input of this function
+
+	// STEP3: Calculate input of the hiddenlayer, i.e. IH = V0transposed * OI
+	Mat Vtr = transpose(V);
+	Mat IH = multiply(Vtr, OI);
+
+	// STEP4: Calculate output of the hiddenlayer, i.e. OH(i) = 1/(1+EXP(-IH(i)))   
+	int hiddenNeurons = V.cols;
+	OH = Mat_<double>(hiddenNeurons, 1);
+	for (int row = 0; row < hiddenNeurons; row++)
+		setEntry(OH, row, 0, 1 / (1 + exp(-getEntry(IH, row, 0))));
+
+} // calculateOutputHiddenLayer
+
+// func: Given the outputvector of the hiddenlayer and a weigthmatrix W calculates the outputvector of the outputlayer
+// pre: OH is the outputvector of the hiddenlayer. W = matrix with weightfactors between hiddenlayer and the outputlayer.
+// post: OO is the outputvector of the output layer
+void calculateOutputBPN(Mat OH, Mat W, Mat & OO) {
+
+	// STEP5: Calculate input of the outputlayer, i.e. IO = W0transposed * OH
+	Mat Wtr = transpose(W);
+	Mat IO = multiply(Wtr, OH);
+
+	// STEP6: Calculate output of the outputlayer, i.e. OO(i) = 1/(1+EXP(-IO(i)))
+	int outputNeurons = W.cols;
+	OO = Mat_<double>(outputNeurons, 1);
+	for (int row = 0; row < outputNeurons; row++)
+		setEntry(OO, row, 0, 1 / (1 + exp(-getEntry(IO, row, 0))));
+
+} // calculateOutputBPN
+
+
+// func: Calculates the total error Error = 1/2*Sigma(OTi-OOi)^2. 
+//       OTi is the expected output according to the trainingvector i
+//       OOi is the calculated output from the current neural network of the traininngvector i
+// pre: OO is the outputvector of the outputlayer. OT is the expected outputvector from the trainingset 
+// post: OO is the outputvector of the output layer
+void calculateOutputBPNError(Mat OO, Mat OT, double & outputError) {
+
+	// STEP7: Calculate the error, i.e. Error = 1/2*Sigma(TOi-OOi)^2
+	double sumSqrErr = 0, diff = 0;
+	for (int row = 0; row < OT.rows; row++) {
+		diff = getEntry(OT, row, 0) - getEntry(OO, row, 0);
+		sumSqrErr += (diff * diff);
+	}
+	outputError = 0.5 * sumSqrErr;
+
+} // calculateOutputBPNError
+
+
+void adaptVW(Mat OT, Mat OO, Mat OH, Mat OI, Mat W0, Mat dW0, Mat V0, Mat dV0, Mat & W, Mat & V,
+		double ALPHA, double ETHA) {
+
+
+	/*BEGIN*** AANPASSING VAN DE WEEGFACTOREN W ****/
+
+	// STEP8: 
+	// E = 1/2 Sigma(OOi - di)^2  ==> dE/dOO = Sigma(OOi - di)
+	// dE/dIO = dE/dOO * dOO/dIO = Sigma((OOi - Ti) * OOi * (1 - OOi))
+	// Here: d = dE/dIO = (T-OO) * OO * (1 - OO) 
+	Mat OOerror = Mat_<double>(OT.rows, 1);
+	OOerror = OT - OO;
+
+	Mat d = Mat_<double>(OT.rows, 1);
+	double di;
+	for (int row = 0; row < OT.rows; row++) {
+		di = (getEntry(OT, row, 0) - getEntry(OO, row, 0)) * getEntry(OO, row, 0) * (1 - getEntry(OO, row, 0));
+		setEntry(d, row, 0, di);
+	}
+
+	// Y = OH * d 
+	Mat dtr = transpose(d);
+	Mat Y = Mat_<double>(OH.rows, OT.rows);
+	Y = multiply(OH, dtr); // OH = mx1 ; d = nx1 ; dtr = 1xn
+
+	// STEP9: dW1 = alpha * dW0 +  etha * Y // assume etha = 0.6 
+	Mat dW = Mat_<double>(OH.rows, OT.rows);
+	dW = ALPHA * dW0 + ETHA * Y;
+
+	/*END*** AANPASSING VAN DE WEEGFACTOREN W ****/
+
+	/*BEGIN*** AANPASSING VAN DE WEEGFACTOREN V ****/
+
+	// STEP10: OHerror = W0 * d
+	Mat OHerror = Mat_<double>(OH.rows, 1);
+	OHerror = W0 * d;
+
+	// STEP11: 
+	// d = dE/dIO = OOerror * OO * (1 - OO)  // OOError = TO - OO
+	// d*= dE/dIH = OHerror * OH * (1 - OH)  // OHerror = W0 * d 
+	Mat dstar = Mat_<double>(OH.rows, 1);
+	double dstari;
+	for (int row = 0; row < OH.rows; row++) {
+		dstari = getEntry(OHerror, row, 0) * getEntry(OH, row, 0) * (1 - getEntry(OH, row, 0));
+		setEntry(dstar, row, 0, dstari);
+	}
+
+	// STEP12:
+	// X = OI * dstar
+	Mat dstartr = transpose(dstar);
+	Mat X = Mat_<double>(OI.rows, OH.rows);
+	X = OI * dstartr;
+
+	// STEP13: dV1 = ALPHA * dV0 +  ETHA * X // assume etha = 0.6 
+	Mat dV;
+	dV = ALPHA * dV0 + ETHA * X;
+	/*END*** AANPASSING VAN DE WEEGFACTOREN V ****/
+
+	/* Update van de matrices met gewichtsfactoren */
+
+	// STEP14:
+	V = Mat_<double>(V0.rows, V0.cols);
+	W = Mat_<double>(W0.rows, W0.cols);
+	V = V0 + dV;
+	W = W0 + dW;
+
+}; // adaptVW
+
+
+Mat BPN(Mat II, Mat V, Mat W) {
+	Mat OH, OO;
+	calculateOutputHiddenLayer(II, V, OH);
+	calculateOutputBPN(OH, W, OO);
+	return OO;
+} // BPN
+
+/*END********************************************** BACK PROPAGATION NEURAL NETWORK ****************************************************************/
