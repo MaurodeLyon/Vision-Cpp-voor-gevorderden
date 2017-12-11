@@ -13,7 +13,9 @@
 
 #include <opencv2\opencv.hpp>
 
-#include "avansvisionlib.h"
+#include "avansvisionlib20.h"
+
+#include "PreProcessing.h"
 
 
 // TODO: reference additional headers your program requires here
