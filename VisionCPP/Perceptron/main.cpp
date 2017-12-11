@@ -57,7 +57,6 @@ void main()
 			<< tabel[rij][1] << setw(3)
 			<< tabel[rij][2] << setw(3)
 			<< tabel[rij][3] << endl;
-		cout << endl;
 	}
 	cout << "Press ENTER to continue" << endl;
 	cin.ignore();
@@ -114,4 +113,4 @@ void main()
 	}
 	cout << "Press ENTER to continue" << endl;
 	cin.ignore();
-}
+}	
