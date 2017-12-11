@@ -82,7 +82,7 @@ int main()
 	Mat region;
 	drawPoints(image_binary, region, regionPixels);
 	imshow("region", region);
-	waitKey(1);
+	waitKey(30);
 
 	compartMentaliseFloodFill(image_original, "figuurFF");
 	waitKey(0);
@@ -388,8 +388,8 @@ int compartMentalise(Mat image_original, string name)
 	for (int i = 0; i < bounding_boxes->size(); i++)
 	{
 		vector<Point> bounding_box = bounding_boxes->at(i);
-		Rect rect = Rect(bounding_box[0].x, bounding_box[2].y, bounding_box[1].x - bounding_box[0].x + 1,
-		                 bounding_box[3].y - bounding_box[2].y + 1);
+		Rect rect = Rect(bounding_box[0].x -1, bounding_box[2].y - 1, bounding_box[1].x - bounding_box[0].x + 3,
+			bounding_box[3].y - bounding_box[2].y + 3);
 		Mat image_roi = image_original(rect);
 
 		imwrite("./../Images/trainingset/" + name + "_" + to_string(i) + ".jpg", image_roi);
@@ -421,6 +421,8 @@ int compartMentaliseFloodFill(Mat image_original, string name)
 		enclosedPixels(contour, regionPixel,image_original);
 		regionPixels->push_back(regionPixel);
 	}
+	Mat region;
+	drawPoints(image_binary, region, regionPixels);
 
 
 	for (int i = 0; i < bounding_boxes->size(); i++)
@@ -428,25 +430,14 @@ int compartMentaliseFloodFill(Mat image_original, string name)
 		vector<Point> bounding_box = bounding_boxes->at(i);
 		Rect rect = Rect(bounding_box[0].x, bounding_box[2].y, bounding_box[1].x - bounding_box[0].x + 1,
 			bounding_box[3].y - bounding_box[2].y + 1);
-		Mat image_roi = image_original(rect);
-		Mat canvas = image_roi.clone();
-		canvas = 0;
+		Mat image_roi = region(rect);
+		Mat canvas= image_roi ;
+		
 		///TODO: Make sure the index of bounding_boxes and regionPixels are synched (should already be,
 		///but not guarenteed)
-		std::vector<Point> currentRegion=regionPixels->at(i);
-		for (Point p : currentRegion)
-		{
-			if (p.y < image_roi.cols && p.x < image_roi.rows)
-			{
-				canvas.at<cv::Vec3b>(p.x, p.y)[0] = image_roi.at<cv::Vec3b>(p.x, p.y)[0];
-				canvas.at<cv::Vec3b>(p.x, p.y)[1] = image_roi.at<cv::Vec3b>(p.x, p.y)[1];
-				canvas.at<cv::Vec3b>(p.x, p.y)[2] = image_roi.at<cv::Vec3b>(p.x, p.y)[2];
-			}
-			
+		
 
-		}
-
-		//imwrite("./../Images/trainingset/" + name + "_" + to_string(i) +"FF" + ".jpg", canvas);
+   		imwrite("./../Images/trainingset/" + name + "_" + to_string(i) +"FF" + ".jpg", canvas);
 		imshow(name + "_" + to_string(i), canvas);
 	}
 	return 1;
@@ -568,7 +559,7 @@ void drawPoints(Mat image_binary, Mat& image_contour, vector<Point>* contour)
 {
 	image_contour = image_binary.clone();
 	image_contour = 0;
-	for (Point e : *contour)
+ 	for (Point e : *contour)
 		image_contour.at<uchar>(Point(e.x, e.y)) = 255;
 	
 }
