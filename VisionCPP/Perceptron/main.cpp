@@ -113,6 +113,7 @@ void main() {
 				threshold += deltaOutput;
 				W1 += deltaW1;
 				W2 += deltaW2;
+				W3 += deltaW3;
 
 			} // if
 
