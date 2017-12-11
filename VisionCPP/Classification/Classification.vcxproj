@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9DD12239-6D51-4654-BD35-25E87401D4AA}</ProjectGuid>
+    <ProjectGuid>{9535F480-5DA8-48A0-BBE3-EFF837335DA7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Classification</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
