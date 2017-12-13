@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Perceptron", "Perceptron\Pe
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BPN", "BPN\BPN.vcxproj", "{9DD12239-6D51-4654-BD35-25E87401D4AA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Classification", "Classification\Classification.vcxproj", "{9535F480-5DA8-48A0-BBE3-EFF837335DA7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{9DD12239-6D51-4654-BD35-25E87401D4AA}.Release|x64.Build.0 = Release|x64
 		{9DD12239-6D51-4654-BD35-25E87401D4AA}.Release|x86.ActiveCfg = Release|Win32
 		{9DD12239-6D51-4654-BD35-25E87401D4AA}.Release|x86.Build.0 = Release|Win32
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Debug|x64.ActiveCfg = Debug|x64
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Debug|x64.Build.0 = Debug|x64
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Debug|x86.ActiveCfg = Debug|Win32
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Debug|x86.Build.0 = Debug|Win32
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Release|x64.ActiveCfg = Release|x64
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Release|x64.Build.0 = Release|x64
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Release|x86.ActiveCfg = Release|Win32
+		{9535F480-5DA8-48A0-BBE3-EFF837335DA7}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
