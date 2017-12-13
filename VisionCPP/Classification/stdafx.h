@@ -10,10 +10,9 @@
 #include <stdio.h>
 #include <tchar.h>
 
-
 #include <opencv2\opencv.hpp>
-
+#include <opencv2/core/core.hpp>
 #include "avansvisionlib20.h"
-
+#include "PreProcessing.h"
 
 // TODO: reference additional headers your program requires here
