@@ -152,11 +152,13 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PreProcessing\PreProcessing.h" />
     <ClInclude Include="avansvisionlib20.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\PreProcessing\PreProcessing.cpp" />
     <ClCompile Include="avansvisionlib20.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">

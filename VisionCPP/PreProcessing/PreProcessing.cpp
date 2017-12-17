@@ -166,7 +166,7 @@ double bendingEnergy(Mat image_binary, vector<Point>& contour)
 		else
 			bendingSum += abs(chainCode[i] - chainCode[0]);
 	}
-	return bendingSum;
+	return bendingSum/chainCode.size();
 }
 
 int allContours(Mat image_binary, vector<vector<Point>>& contours)
@@ -184,28 +184,37 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 			<< getEntryImage(image_binary, firstPixel->x, firstPixel->y)
 			<< endl;
 
-		// Start creating vector which will contain the contour
-		vector<Point> contour;
-		// add first pixel 
-		contour.push_back(Point(firstPixel->y, firstPixel->x));
-		// find next pixel
-		int current_direction = getDirectionClosest(image_binary, Point(firstPixel->y, firstPixel->x));
-		Point next_point = getDirectionPoint(Point(firstPixel->y, firstPixel->x), current_direction);
-		if (!(next_point.y == -1 && next_point.x == -1))
+		if (firstPixel->x != 0 && firstPixel->y != 0)
 		{
-			contour.push_back(next_point);
-			int next_direction = getDirectionClosest(image_binary, next_point, current_direction - 2);
-			next_point = getDirectionPoint(next_point, next_direction);
-
-			do
+			// Start creating vector which will contain the contour
+			vector<Point> contour;
+			// add first pixel 
+			contour.push_back(Point(firstPixel->y, firstPixel->x));
+			// find next pixel
+			int current_direction = getDirectionClosest(image_binary, Point(firstPixel->y, firstPixel->x));
+			Point next_point = getDirectionPoint(Point(firstPixel->y, firstPixel->x), current_direction);
+			if (!(next_point.y == -1 && next_point.x == -1))
 			{
 				contour.push_back(next_point);
-				next_direction = getDirectionClosest(image_binary, next_point, next_direction - 2);
+				int next_direction = getDirectionClosest(image_binary, next_point, current_direction - 2);
 				next_point = getDirectionPoint(next_point, next_direction);
-			} while (!(firstPixel->y == next_point.x && firstPixel->x == next_point.y));
+
+				do
+				{
+					contour.push_back(next_point);
+					next_direction = getDirectionClosest(image_binary, next_point, next_direction - 2);
+					next_point = getDirectionPoint(next_point, next_direction);
+				} while (!(firstPixel->y == next_point.x && firstPixel->x == next_point.y));
+			}
+			contours.push_back(contour);
+			cout << "contour done" << endl;
 		}
-		contours.push_back(contour);
-		cout << "contour done" << endl;
+		else
+		{
+			cout << "failure first point, ignoring for to conform with testing parameters" << endl;
+		}
+
+		
 	}
 	return -1;
 }

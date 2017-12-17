@@ -15,7 +15,7 @@ using namespace cv;
 int main()
 {
 
-	Mat image_original = imread("./../Images/basisfiguren.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat image_original = imread("./../Images/trainingset/horcrux2.jpg", CV_LOAD_IMAGE_COLOR);
 
 	imshow("Original", image_original);
 

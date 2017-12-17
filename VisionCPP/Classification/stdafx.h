@@ -15,5 +15,7 @@
 
 #include "avansvisionlib20.h"
 
+#include "../PreProcessing/PreProcessing.h"
+
 
 // TODO: reference additional headers your program requires here
