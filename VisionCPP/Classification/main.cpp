@@ -3,6 +3,9 @@
 using namespace cv;
 using namespace std;
 
+int nrOfHolesID(Mat src, Mat binaryImg);
+double bendingEnergyID(Mat binaryImg16S);
+
 void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
 	Mat image_gray;
@@ -30,8 +33,8 @@ const int MAXRUNS = 10000;
 
 int main(int argc, char** argv)
 {
-	Mat ITset, OTset;
-	loadSquareImageTrainingSet(ITset, OTset);
+	//Mat ITset, OTset;
+	//loadSquareImageTrainingSet(ITset, OTset);
 	
 //	Mat V0, W0, dW0, dV0;
 //
@@ -151,8 +154,17 @@ int main(int argc, char** argv)
 	//		i++;
 	//	}
 	//}
+	*/
+	Mat src = imread("./../Images/trainingset/horcrux2.jpg", CV_LOAD_IMAGE_COLOR);
+	Rect r(Point(60, 68), Point(450, 456));//
+	Rect rect = Rect(68,25,456 -68 + 1,
+		488 - 25 + 1);
 
-	Mat src = imread("./../Images/trainingset/skyrim_0.jpg", CV_LOAD_IMAGE_COLOR);
+	/*bounding_box.push_back(left_border);
+	bounding_box.push_back(right_border);
+	bounding_box.push_back(top_border);
+	bounding_box.push_back(bottom_border);*/
+	src = src(r);
 	Mat gray;
 	cvtColor(src, gray, CV_BGR2GRAY);
 	Mat binaryImg; Mat binaryImgINV;
@@ -166,13 +178,49 @@ int main(int argc, char** argv)
 	waitKey(0);
 
 
+	int holes = nrOfHolesID(src,binaryImg);
+	double bendingEnrgy = bendingEnergyID(binaryImg16S);
+	
+	cout << "H: " << holes << endl;
+	cout << "BE:" << bendingEnrgy << endl;
+	
+
+
+
+	//// Get the camera image
+	//Mat image_original = imread("./../Images/square.bmp", CV_LOAD_IMAGE_COLOR);
+
+	//// Detect object
+	//Mat image_gray;
+	//cvtColor(image_original, image_gray, CV_BGR2GRAY);
+	//Mat image_binary;
+	//threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
+	//Mat image_binary16S;
+	//image_binary.convertTo(image_binary16S, CV_16S);
+
+	//// Extract object 
+	////     1. contour
+	////     2. flood fill
+	////     3. output image
+	//compartMentaliseFloodFill(image_original, "figuurFF");
+	//// feature detection
+	//// Feed the output image to the neural network
+	//// Display the results
+
+	//imshow("Original", image_original);
+	//show16SImageStretch(image_binary16S, "Binary 16S");
+}
+
+int nrOfHolesID(Mat src, Mat binaryImg)
+{
+
 	//Nr of holes
 
 	vector< vector <Point> > contoursOpenCV; // Vector for storing contour
 	vector< Vec4i > hierarchy;
 	//Mat dst(src.rows, src.cols, CV_8UC1, Scalar::all(0)); //create destination image
 	Mat dst = src.clone();
-	
+
 	//dst = 0;
 	int count = 0;
 	//allContours(binaryImg16S, contours);
@@ -187,41 +235,24 @@ int main(int argc, char** argv)
 		}
 	}
 	cout << "Number of contour = " << count << endl;
-	
+
 	imshow("nrOfHoles", dst);
 	waitKey(0);
 
+	return count;
+}
+
+double bendingEnergyID(Mat binaryImg16S)
+{
 	//Bending Energy
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
 	allContours(binaryImg16S, *contours);
+	double bendingEnergyID = 0;
 	for (vector<Point> contour : *contours) {
-		cout << "bendingEnergy " << bendingEnergy(binaryImg16S, contour);
+		bendingEnergyID = bendingEnergy(binaryImg16S, contour);
+		cout << "bendingEnergy " << bendingEnergyID << endl;
 	}
 	waitKey(0);
-	
 
-
-
-	// Get the camera image
-	Mat image_original = imread("./../Images/square.bmp", CV_LOAD_IMAGE_COLOR);
-
-	// Detect object
-	Mat image_gray;
-	cvtColor(image_original, image_gray, CV_BGR2GRAY);
-	Mat image_binary;
-	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
-	Mat image_binary16S;
-	image_binary.convertTo(image_binary16S, CV_16S);
-
-	// Extract object 
-	//     1. contour
-	//     2. flood fill
-	//     3. output image
-	compartMentaliseFloodFill(image_original, "figuurFF");
-	// feature detection
-	// Feed the output image to the neural network
-	// Display the results
-
-	imshow("Original", image_original);
-	show16SImageStretch(image_binary16S, "Binary 16S");*/
+	return bendingEnergyID;
 }
