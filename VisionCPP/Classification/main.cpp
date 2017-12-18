@@ -6,12 +6,12 @@ using namespace std;
 void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
 	Mat image_gray;
-	cvtColor(imread("./../Images/trainingset/test_0.bmp", CV_LOAD_IMAGE_COLOR), image_gray, CV_BGR2GRAY);
+	cvtColor(imread("./../Images/trainingSquare.png", CV_LOAD_IMAGE_COLOR), image_gray, CV_BGR2GRAY);
 	imshow("Gray", image_gray);
 	Mat image_binary;
 	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
 	image_binary.convertTo(image_binary, CV_16S);
-	printMatrix(image_binary);
+	//printMatrix(image_binary);
 	
 	Mat blob;
 	cout << labelBLOBs(image_binary, blob) << endl;
