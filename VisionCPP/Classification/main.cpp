@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "PreProcessing.h"
 
 using namespace cv;
 using namespace std;
