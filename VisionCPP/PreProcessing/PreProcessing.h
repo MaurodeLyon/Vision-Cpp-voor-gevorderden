@@ -1,7 +1,7 @@
 #pragma once
 
 	int getDirectionNumber(Point p1, Point p2);
-	int getDirectionClosest(Mat image_binary, Point p, int starting_direction);
+	int getDirectionClosest(Mat image_binary, Point p, int starting_direction = 0);
 	Point getDirectionPoint(Point p, int direction_number);
 
 	int allContoursRecursive(Mat image_binary, vector<vector<Point>>& contours);

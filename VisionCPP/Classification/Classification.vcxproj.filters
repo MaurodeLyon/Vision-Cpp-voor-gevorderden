@@ -41,7 +41,7 @@
     <ClCompile Include="avansvisionlib20.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\PreProcessing\PreProcessing.cpp">
+    <ClCompile Include="PreProcessing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
