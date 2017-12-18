@@ -4,8 +4,8 @@
 using namespace cv;
 using namespace std;
 
-int nrOfHolesID(Mat src, Mat binaryImg);
-double bendingEnergyID(Mat binaryImg16S);
+int numberOfHolesID(Mat image_binary);
+double bendingEnergyID(Mat image_binary_16s);
 
 void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
@@ -18,10 +18,10 @@ void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 
 	// collect data
 	Mat blobs;
-	int numberOfHoles = labelBLOBs(image, blobs);
+	int numberOfHoles = numberOfHolesID(image);
 	vector<vector<Point>> contours;
 	allContours(image, contours);
-	double energy = bendingEnergy(image, contours[0]);
+	double energy = bendingEnergyID(image);
 	// create input set
 
 	// create desired output
@@ -176,48 +176,32 @@ int main(int argc, char** argv)
 	*/
 }
 
-int nrOfHolesID(Mat src, Mat binaryImg)
+int numberOfHolesID(Mat image_binary)
 {
-	vector<vector<Point>> contoursOpenCV; // Vector for storing contour
+	vector<vector<Point>> contours;
 	vector<Vec4i> hierarchy;
-	//Mat dst(src.rows, src.cols, CV_8UC1, Scalar::all(0)); //create destination image
-	Mat dst = src.clone();
 
-	//dst = 0;
 	int count = 0;
-	//allContours(binaryImg16S, contours);
-	findContours(binaryImg, contoursOpenCV, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-	// Find the contours in the image
-
-	for (int i = 0; i < contoursOpenCV.size(); i = hierarchy[i][0]) // iterate through each contour.
+	findContours(image_binary, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	for (int i = 0; i < contours.size(); i = hierarchy[i][0])
 	{
-		Rect r = boundingRect(contoursOpenCV[i]);
 		if (hierarchy[i][2] < 0)
 		{
-			rectangle(dst, Point(r.x, r.y), Point(r.x + r.width, r.y + r.height), Scalar(255, 0, 0), 3, 8, 0);
 			count++;
 		}
 	}
-	cout << "Number of contour = " << count << endl;
-
-	imshow("nrOfHoles", dst);
-	waitKey(0);
-
 	return count;
 }
 
-double bendingEnergyID(Mat binaryImg16S)
+double bendingEnergyID(Mat image_binary_16s)
 {
 	//Bending Energy
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	allContours(binaryImg16S, *contours);
+	allContours(image_binary_16s, *contours);
 	double bendingEnergyID = 0;
 	for (vector<Point> contour : *contours)
 	{
-		bendingEnergyID = bendingEnergy(binaryImg16S, contour);
-		cout << "bendingEnergy " << bendingEnergyID << endl;
+		bendingEnergyID = bendingEnergy(image_binary_16s, contour);
 	}
-	waitKey(0);
-
 	return bendingEnergyID;
 }
