@@ -43,7 +43,7 @@ double inproduct(Mat row, Mat col) {
 void printMatrix(Mat m) {
 	for (int i = 0; i < m.rows; i++) {
 		for (int j = 0; j < m.cols; j++)
-			cout << getEntryImage(m, i, j) << "  ";
+			cout << getEntry(m, i, j) << "  ";
 		cout << endl;
 	}
 	cout << endl;
