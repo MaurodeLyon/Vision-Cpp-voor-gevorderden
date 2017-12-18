@@ -7,6 +7,10 @@ using namespace std;
 int numberOfHolesID(Mat image_binary);
 double bendingEnergyID(Mat image_binary_16s);
 
+double areaID(Mat binaryImg16S);
+double areaHolesID(Mat image_binary);
+
+
 void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
 	// load image
@@ -52,7 +56,7 @@ const int MAXRUNS = 10000;
 int main(int argc, char** argv)
 {
 	Mat ITset, OTset;
-	loadSquareImageTrainingSet(ITset, OTset);
+	//loadSquareImageTrainingSet(ITset, OTset);
 
 	//	Mat V0, W0, dW0, dV0;
 	//
@@ -174,6 +178,71 @@ int main(int argc, char** argv)
 	//	}
 	//}
 	*/
+
+	Mat src = imread("./../Images/trainingset/horcrux2.jpg", CV_LOAD_IMAGE_COLOR);
+	Rect r(Point(60, 68), Point(450, 456));//
+	
+
+	/*bounding_box.push_back(left_border);
+	bounding_box.push_back(right_border);
+	bounding_box.push_back(top_border);
+	bounding_box.push_back(bottom_border);*/
+	src = src(r);
+	Mat gray;
+	cvtColor(src, gray, CV_BGR2GRAY);
+	Mat binaryImg; Mat binaryImgINV;
+	threshold(gray, binaryImg, 200, 255, THRESH_BINARY);
+	threshold(gray, binaryImgINV, 200, 1, THRESH_BINARY_INV);
+	Mat binaryImg16S;
+	binaryImgINV.convertTo(binaryImg16S, CV_16S);
+	imshow("src", src);
+	imshow("gray", gray);
+	imshow("binaryImg", binaryImg);
+	waitKey(0);
+	vector<vector<Point>> *contours = new vector<vector<Point>>();
+	allContours(binaryImg16S, *contours);
+	Mat test;
+	drawPoints(binaryImg,test,contours);
+	imshow("test", test);
+	cout << "area : " << contourArea(contours->at(0));
+
+	double areaholes = areaHolesID(binaryImg);
+	cout << "areaholesid " << areaholes  << endl;
+	cout << "areaid" << areaID(binaryImg16S) << endl;
+
+	waitKey(0);
+
+
+
+}
+
+double areaHolesID(Mat image_binary)
+{
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+
+	double area = 0;
+	int count = 0;
+	findContours(image_binary, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	for (int i = 0; i < contours.size(); i = hierarchy[i][0])
+	{
+		Rect r = boundingRect(contours[i]);
+		if (hierarchy[i][2] < 0)
+		{
+			area += r.area();
+			count++;
+		}
+	}
+	return area/count;
+}
+
+double areaID(Mat binaryImg16S)
+{
+	vector<vector<Point>> *contours = new vector<vector<Point>>();
+	allContours(binaryImg16S, *contours);
+	double area= contourArea(contours->at(0));
+	cout << "area : " << area << endl;
+	return area;
 }
 
 int numberOfHolesID(Mat image_binary)
