@@ -18,11 +18,11 @@ void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 	int numberOfHoles = labelBLOBs(image, blobs);
 	vector<vector<Point>> contours;
 	allContours(image, contours);
-	cout << bendingEnergy(image, contours[0]);
+	double energy = bendingEnergy(image, contours[0]);
 	// create input set
 
 	// create desired output
-	waitKey(0);
+ 	waitKey(0);
 	//	Mat image_gray;
 	//	cvtColor(imread("./../Images/trainingSquare.png", CV_LOAD_IMAGE_COLOR), image_gray, CV_BGR2GRAY);
 	//	imshow("Gray", image_gray);
