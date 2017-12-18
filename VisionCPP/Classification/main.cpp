@@ -40,11 +40,12 @@ void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 	ITset.push_back(Load("./../Images/trainingCircle.png"));
 	printMatrix(ITset);
 
+	// create desired output
+	OTset = (Mat_<double>(2, 1) << 0
+								, 1);
+
 	string c;
 	getline(cin, c);
-	// create desired output
-
-	OTset = (Mat_<double>(2, 1) << 1 , 0);
 }
 
 const double MAX_OUTPUT_ERROR = 1E-10;
@@ -124,7 +125,7 @@ int main(int argc, char** argv)
 		cout << setw(2) << "|";
 		cout << endl;
 	}
-	Mat test = (Mat_<double>(2, 1) << 1 , 0);
+	Mat test = (Mat_<double>(2, 1) << 1 , 1);
 	Mat result = BPN(test, V0, W0);
 	cout << "results : " << endl;
 	for (int row = 0; row < result.rows; row++)
