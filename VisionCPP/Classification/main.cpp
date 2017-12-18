@@ -31,47 +31,54 @@ Mat_<double> Load(string path)
 
 	// collect data
 	Mat blobs;
-	int numberOfHoles = numberOfHolesID(image_binary);
 	vector<vector<Point>> contours;
 	allContours(image_binary_16s, contours);
-	double energy = bendingEnergyID(image_binary_16s);
 
+	double numberOfHoles = numberOfHolesID(image_binary);
+	double energy = bendingEnergyID(image_binary_16s);
 	double areaholes = areaHolesID(image_binary);
-	cout << "areaholesid " << areaholes << endl;
 	double areaid = areaID(image_binary_16s);
-	cout << "areaid" << areaid << endl;
-	return (Mat_<double>(1, 2) << numberOfHoles , energy);
+	return Mat_<double>(1, 4) << numberOfHoles , energy , areaholes , areaid;
 }
 
 void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
-	Mat_<double> first;
+	Mat_<double> rawInputSet;
 	// create input set
-	first.push_back(Load("./../Images/trainingSquare.png"));
-	first.push_back(Load("./../Images/trainingCircle.png"));
-	printMatrix(first);
-	double maxHoles = -1, maxEnergy = -1;
+	rawInputSet.push_back(Load("./../Images/trainingSquare.png"));
+	rawInputSet.push_back(Load("./../Images/trainingCircle.png"));
+	printMatrix(rawInputSet);
+	double maxHoles = -1, maxEnergy = -1, maxAreaHoles = -1, maxArea = -1;
 
 	// normalisatie
-	for (int row = 0; row < first.rows; row++)
+	for (int row = 0; row < rawInputSet.rows; row++)
 	{
-		for (int col = 0; col < first.cols; col++)
+		if (getEntry(rawInputSet, row, 0) > maxHoles)
 		{
-			if (col == 0 && getEntry(first, row, col) > maxHoles)
-			{
-				maxHoles = getEntry(first, row, col);
-			}
-			if (col == 1 && getEntry(first, row, col) > maxEnergy)
-			{
-				maxEnergy = getEntry(first, row, col);
-			}
+			maxHoles = getEntry(rawInputSet, row, 0);
+		}
+		if (getEntry(rawInputSet, row, 1) > maxEnergy)
+		{
+			maxEnergy = getEntry(rawInputSet, row, 1);
+		}
+		if (getEntry(rawInputSet, row, 2) > maxAreaHoles)
+		{
+			maxAreaHoles = getEntry(rawInputSet, row, 2);
+		}
+		if (getEntry(rawInputSet, row, 3) > maxArea)
+		{
+			maxArea = getEntry(rawInputSet, row, 3);
 		}
 	}
 
 	// create input set
-	for (int row = 0; row < first.rows; row++)
+	for (int row = 0; row < rawInputSet.rows; row++)
 	{
-		Mat_<double> set = (Mat_<double>(1, 2) << getEntry(first, row, 0) / maxHoles , getEntry(first, row, 1) / maxEnergy);
+		Mat_<double> set = (Mat_<double>(1, 4) <<
+			getEntry(rawInputSet, row, 0) / maxHoles ,
+			getEntry(rawInputSet, row, 1) / maxEnergy ,
+			getEntry(rawInputSet, row, 2) / maxAreaHoles ,
+			getEntry(rawInputSet, row, 3) / maxArea);
 		ITset.push_back(set);
 	}
 	printMatrix(ITset);
