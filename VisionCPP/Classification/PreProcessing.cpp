@@ -1,6 +1,4 @@
 #include "stdafx.h"
-#include "PreProcessing.h"
-
 
 /*
 * finds all contours in an image_binary
@@ -179,10 +177,10 @@ int allContours(Mat image_binary, vector<vector<Point>>& contours)
 
 	for (Point2d* firstPixel : firstPixels)
 	{
-		cout << "Getting contour for figure with first pixel ["
-			<< firstPixel->x << "," << firstPixel->y << "] = "
-			<< getEntryImage(image_binary, firstPixel->x, firstPixel->y)
-			<< endl;
+//		cout << "Getting contour for figure with first pixel ["
+//			<< firstPixel->x << "," << firstPixel->y << "] = "
+//			<< getEntryImage(image_binary, firstPixel->x, firstPixel->y)
+//			<< endl;
 
 		if (firstPixel->x != 0 && firstPixel->y != 0)
 		{

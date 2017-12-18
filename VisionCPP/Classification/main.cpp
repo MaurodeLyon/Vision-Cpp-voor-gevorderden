@@ -6,15 +6,15 @@ using namespace std;
 
 int numberOfHolesID(Mat image_binary);
 double bendingEnergyID(Mat image_binary_16s);
-
-Mat_<double> Load(string path);
 double areaID(Mat binaryImg16S);
 double areaHolesID(Mat image_binary);
 
-double* maxHoles;
-double* maxEnergy;
-double* maxAreaHoles;
-double* maxArea;
+const double MAX_OUTPUT_ERROR = 1E-10;
+const int MAXRUNS = 10000;
+volatile double* maxHoles;
+volatile double* maxEnergy;
+volatile double* maxAreaHoles;
+volatile double* maxArea;
 
 Mat_<double> Load(string path)
 {
@@ -45,7 +45,7 @@ Mat_<double> Load(string path)
 	double energy = bendingEnergyID(image_binary_16s);
 	double areaholes = areaHolesID(image_binary);
 	double areaid = areaID(image_binary_16s);
-	return Mat_<double>(1, 4) << numberOfHoles , energy , areaholes , areaid;
+	return Mat_<double>(1, 4) << numberOfHoles, energy, areaholes, areaid;
 }
 
 void loadTrainingSet(Mat& ITset, Mat& OTset)
@@ -67,15 +67,11 @@ void loadTrainingSet(Mat& ITset, Mat& OTset)
 	rawInputSet.push_back(Load("./../Images/trainingset/vis_0.jpg"));
 	rawInputSet.push_back(Load("./../Images/trainingset/vis_1.jpg"));
 	rawInputSet.push_back(Load("./../Images/trainingset/vis_2.jpg"));
-	printMatrix(rawInputSet);
-	double holes = -1;
-	double energy = -1;
-	double areaHoles = -1;
-	double area = -1;
-	maxHoles = &holes;
-	maxEnergy = &energy;
-	maxAreaHoles = &areaHoles;
-	maxArea = &area;
+
+	maxHoles = new double(-1);
+	maxEnergy = new double(-1);
+	maxAreaHoles = new double(-1);
+	maxArea = new double(-1);
 
 	// normalisatie
 	for (int row = 0; row < rawInputSet.rows; row++)
@@ -115,67 +111,48 @@ void loadTrainingSet(Mat& ITset, Mat& OTset)
 			nMaxArea = getEntry(rawInputSet, row, 3) / *maxArea;
 
 		Mat_<double> set = (Mat_<double>(1, 4) <<
-			nMaxHoles ,
-			nMaxEnergy ,
-			nMaxAreaHoles ,
+			nMaxHoles,
+			nMaxEnergy,
+			nMaxAreaHoles,
 			nMaxArea
 		);
 		ITset.push_back(set);
 	}
-	printMatrix(ITset);
 
 	// create desired output
 	OTset = (Mat_<double>(12, 2) <<
-		0 , 0 ,
-		0 , 0 ,
-		0 , 0 ,
-		0 , 1 ,
-		0 , 1 ,
-		0 , 1 ,
-		1 , 0 ,
-		1 , 0 ,
-		1 , 0 ,
-		1 , 1 ,
-		1 , 1 ,
-		1 , 1);
-
-	string c;
-	getline(cin, c);
+		0, 0,
+		0, 0,
+		0, 0,
+		0, 1,
+		0, 1,
+		0, 1,
+		1, 0,
+		1, 0,
+		1, 0,
+		1, 1,
+		1, 1,
+		1, 1);
 }
 
-const double MAX_OUTPUT_ERROR = 1E-10;
-const int MAXRUNS = 10000;
-
-int main(int argc, char** argv)
+void TrainBPN(Mat ITset, Mat OTset, Mat& V0, Mat& W0)
 {
-	Mat ITset, OTset;
-	loadTrainingSet(ITset, OTset);
-	double mHoles = *maxHoles;
-	double mEnergy = *maxEnergy;
-	double mAreaHoles = *maxAreaHoles;
-	double mArea = *maxArea;
-	Mat V0, W0, dW0, dV0;
-
+	Mat dW0, dV0;
 	int hiddenNeurons = 2;
-
-	cout << " ===> BPN format: " << endl <<
-		"BPN Inputlayer  = " << ITset.cols << "  neurons" << endl <<
-		"BPN Outputlayer = " << OTset.cols << "  neurons" << endl << endl;
-	cout << "Please choose a number of hidden neurons: ";
+	cout << " BPN format: " << endl;
+	cout << "Input neurons  = " << ITset.cols << "  neurons" << endl;
+	cout << "Output neurons = " << OTset.cols << "  neurons" << endl;
+	cout << "Hidden neurons = ";
 	cin >> hiddenNeurons;
+	cout << " neurons" << endl;
+	cout << "Starting BPN training." << endl;
 
-	cout << "Initialize BPN ..." << endl;
 	initializeBPN(ITset.cols, hiddenNeurons, OTset.cols, V0, dV0, W0, dW0);
-	cout << "Press ENTER => ";
-	string dummy;
-	getline(cin, dummy);
-	getline(cin, dummy);
-
 	Mat IT, OT, OH, OO;
 	double outputError0, outputError1, sumSqrDiffError = MAX_OUTPUT_ERROR + 1;
 	Mat V1, W1;
 	int runs = 0;
-	while ((sumSqrDiffError > MAX_OUTPUT_ERROR) && (runs < MAXRUNS))
+	while (sumSqrDiffError > MAX_OUTPUT_ERROR && runs < MAXRUNS)
 	{
 		sumSqrDiffError = 0;
 
@@ -192,7 +169,7 @@ int main(int argc, char** argv)
 			V0 = V1;
 			W0 = W1;
 		}
-		cout << "sumSqrDiffError = " << sumSqrDiffError << endl;
+		cout << "Training: " << round(MAX_OUTPUT_ERROR / sumSqrDiffError * 100) << "%" << endl;
 		runs++;
 	}
 
@@ -223,25 +200,28 @@ int main(int argc, char** argv)
 		cout << setw(2) << "|";
 		cout << endl;
 	}
-	Mat test = Load("./../Images/trainingset/vis_16.jpg");
+}
 
+void UseBPN(string image_path, Mat V0, Mat W0)
+{
+	Mat test = Load(image_path);
 	double nMaxHoles = 0;
 	double nMaxEnergy = 0;
 	double nMaxAreaHoles = 0;
 	double nMaxArea = 0;
-	if (mHoles != 0)
-		nMaxHoles = getEntry(test, 0, 0) / mHoles;
-	if (mEnergy != 0)
-		nMaxEnergy = getEntry(test, 0, 1) / mEnergy;
-	if (mAreaHoles != 0)
-		nMaxAreaHoles = getEntry(test, 0, 2) / mAreaHoles;
-	if (mArea != 0)
-		nMaxArea = getEntry(test, 0, 3) / mArea;
+	if (*maxHoles != 0)
+		nMaxHoles = getEntry(test, 0, 0) / *maxHoles;
+	if (*maxEnergy != 0)
+		nMaxEnergy = getEntry(test, 0, 1) / *maxEnergy;
+	if (*maxAreaHoles != 0)
+		nMaxAreaHoles = getEntry(test, 0, 2) / *maxAreaHoles;
+	if (*maxArea != 0)
+		nMaxArea = getEntry(test, 0, 3) / *maxArea;
 
 	Mat_<double> set = (Mat_<double>(1, 4) <<
-		nMaxHoles ,
-		nMaxEnergy ,
-		nMaxAreaHoles ,
+		nMaxHoles,
+		nMaxEnergy,
+		nMaxAreaHoles,
 		nMaxArea
 	);
 
@@ -255,76 +235,19 @@ int main(int argc, char** argv)
 		}
 		cout << endl;
 	}
+}
+
+int main(int argc, char** argv)
+{
+	Mat ITset, OTset, V0, W0;
+	loadTrainingSet(ITset, OTset);
+	TrainBPN(ITset, OTset, V0, W0);
+	UseBPN("./../Images/trainingset/vis_16.jpg", V0, W0);
+
 	cout << endl << endl << "Press ENTER for exit";
+	string dummy;
 	getline(cin, dummy);
 	getline(cin, dummy);
-
-
-	/*cout << "---- Mauro & Arthur object classification application ----" << endl;
-
-	// Train neural network with training data
-
-	///Create test data
-	//cout << "Press enter to check the object" << endl;
-	//string input;
-	//getline(cin, input);
-
-	//VideoCapture cap(1);
-	////waitKey(500);
-	//if (!cap.isOpened())
-	//	cout << "Cannot open the video cam" << endl;
-
-	//double dWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-	//double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
-	//cout << "Frame size : " << dWidth << " x " << dHeight << endl;
-
-	//Mat frame;
-	//int i = 0;
-	//string filename = "vis";
-	//while (true)
-	//{
-	//	cap.read(frame);
-	//	imshow("test", frame);
-	//	if (waitKey(30) == 27)
-	//	{
-	//		std::cout << "save object" << std::endl;
-	//		
-	//		//getline(cin,filename);
-	//		imwrite("./../Images/trainingset/" + filename + "_" + to_string(i) + ".jpg", frame);
-	//		i++;
-	//	}
-	//}
-	*/
-
-
-	/*bounding_box.push_back(left_border);
-	bounding_box.push_back(right_border);
-	bounding_box.push_back(top_border);
-	bounding_box.push_back(bottom_border);*/
-	//	Mat gray;
-	//	cvtColor(src, gray, CV_BGR2GRAY);
-	//	Mat binaryImg;
-	//	Mat binaryImgINV;
-	//	threshold(gray, binaryImg, 200, 255, THRESH_BINARY);
-	//	threshold(gray, binaryImgINV, 200, 1, THRESH_BINARY_INV);
-	//	Mat binaryImg16S;
-	//	binaryImgINV.convertTo(binaryImg16S, CV_16S);
-	//	imshow("src", src);
-	//	imshow("gray", gray);
-	//	imshow("binaryImg", binaryImg);
-	//	waitKey(0);
-	//	vector<vector<Point>>* contours = new vector<vector<Point>>();
-	//	allContours(binaryImg16S, *contours);
-	//	Mat test;
-	//	drawPoints(binaryImg, test, contours);
-	//	imshow("test", test);
-	//	cout << "area : " << contourArea(contours->at(0));
-	//
-	//	double areaholes = areaHolesID(binaryImg);
-	//	cout << "areaholesid " << areaholes << endl;
-	//	cout << "areaid" << areaID(binaryImg16S) << endl;
-
-	waitKey(0);
 }
 
 double areaHolesID(Mat image_binary)
@@ -356,7 +279,7 @@ double areaID(Mat binaryImg16S)
 	vector<vector<Point>>* contours = new vector<vector<Point>>();
 	allContours(binaryImg16S, *contours);
 	double area = contourArea(contours->at(0));
-	cout << "area : " << area << endl;
+	//	cout << "area : " << area << endl;
 	return area;
 }
 
