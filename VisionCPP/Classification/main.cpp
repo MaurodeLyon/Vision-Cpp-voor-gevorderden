@@ -11,32 +11,33 @@ void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
 	// load image
 	Mat image = imread("./../Images/trainingSquare.png", CV_LOAD_IMAGE_COLOR);
-	cvtColor(image, image, CV_BGR2GRAY);
-	threshold(image, image, 200, 1, CV_THRESH_BINARY_INV);
-	image.convertTo(image, CV_16S);
-	show16SImageStretch(image);
+
+	Mat image_gray;
+	cvtColor(image, image_gray, CV_BGR2GRAY);
+
+	Mat image_binary;
+	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY);
+
+	Mat image_binary_inverse;
+	threshold(image_gray, image_binary_inverse, 200, 1, CV_THRESH_BINARY_INV);
+
+	Mat image_binary_16s;
+	image_binary_inverse.convertTo(image_binary_16s, CV_16S);
+	show16SImageStretch(image_binary_16s);
 
 	// collect data
 	Mat blobs;
-	int numberOfHoles = numberOfHolesID(image);
+	int numberOfHoles = numberOfHolesID(image_binary);
 	vector<vector<Point>> contours;
-	allContours(image, contours);
-	double energy = bendingEnergyID(image);
+	allContours(image_binary_inverse, contours);
+	double energy = bendingEnergyID(image_binary_16s);
+
 	// create input set
+	ITset = (Mat_<double>(2, 1) << numberOfHoles , energy);
 
 	// create desired output
 	waitKey(0);
-	//	Mat image_gray;
-	//	cvtColor(imread("./../Images/trainingSquare.png", CV_LOAD_IMAGE_COLOR), image_gray, CV_BGR2GRAY);
-	//	imshow("Gray", image_gray);
-	//	Mat image_binary;
-	//	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY_INV);
-	//	image_binary.convertTo(image_binary, CV_16S);
-	//	//printMatrix(image_binary);
-	//	
-	//	Mat blob;
-	//	cout << labelBLOBs(image_binary, blob) << endl;
-	//
+
 	//	ITset = (Mat_<double>(2, 1) <<
 	//		0 ,
 	//		1);
