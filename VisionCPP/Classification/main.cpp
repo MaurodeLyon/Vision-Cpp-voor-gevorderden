@@ -33,16 +33,42 @@ Mat_<double> Load(string path)
 	Mat blobs;
 	int numberOfHoles = numberOfHolesID(image_binary);
 	vector<vector<Point>> contours;
-	allContours(image_binary_inverse, contours);
+	allContours(image_binary_16s, contours);
 	double energy = bendingEnergyID(image_binary_16s);
 	return (Mat_<double>(1, 2) << numberOfHoles , energy);
 }
 
 void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
 {
+	Mat_<double> first;
 	// create input set
-	ITset.push_back(Load("./../Images/trainingSquare.png"));
-	ITset.push_back(Load("./../Images/trainingCircle.png"));
+	first.push_back(Load("./../Images/trainingSquare.png"));
+	first.push_back(Load("./../Images/trainingCircle.png"));
+	printMatrix(first);
+	double maxHoles = -1, maxEnergy = -1;
+
+	// normalisatie
+	for (int row = 0; row < first.rows; row++)
+	{
+		for (int col = 0; col < first.cols; col++)
+		{
+			if (col == 0 && getEntry(first, row, col) > maxHoles)
+			{
+				maxHoles = getEntry(first, row, col);
+			}
+			if (col == 1 && getEntry(first, row, col) > maxEnergy)
+			{
+				maxEnergy = getEntry(first, row, col);
+			}
+		}
+	}
+
+	// create input set
+	for (int row = 0; row < first.rows; row++)
+	{
+		Mat_<double> set = (Mat_<double>(1, 2) << getEntry(first, row, 0) / maxHoles , getEntry(first, row, 1) / maxEnergy);
+		ITset.push_back(set);
+	}
 	printMatrix(ITset);
 
 	// create desired output
@@ -190,29 +216,29 @@ int main(int argc, char** argv)
 	bounding_box.push_back(right_border);
 	bounding_box.push_back(top_border);
 	bounding_box.push_back(bottom_border);*/
-//	src = src(r);
-//	Mat gray;
-//	cvtColor(src, gray, CV_BGR2GRAY);
-//	Mat binaryImg;
-//	Mat binaryImgINV;
-//	threshold(gray, binaryImg, 200, 255, THRESH_BINARY);
-//	threshold(gray, binaryImgINV, 200, 1, THRESH_BINARY_INV);
-//	Mat binaryImg16S;
-//	binaryImgINV.convertTo(binaryImg16S, CV_16S);
-//	imshow("src", src);
-//	imshow("gray", gray);
-//	imshow("binaryImg", binaryImg);
-//	waitKey(0);
-//	vector<vector<Point>>* contours = new vector<vector<Point>>();
-//	allContours(binaryImg16S, *contours);
-//	Mat test;
-//	drawPoints(binaryImg, test, contours);
-//	imshow("test", test);
-//	cout << "area : " << contourArea(contours->at(0));
-//
-//	double areaholes = areaHolesID(binaryImg);
-//	cout << "areaholesid " << areaholes << endl;
-//	cout << "areaid" << areaID(binaryImg16S) << endl;
+	//	src = src(r);
+	//	Mat gray;
+	//	cvtColor(src, gray, CV_BGR2GRAY);
+	//	Mat binaryImg;
+	//	Mat binaryImgINV;
+	//	threshold(gray, binaryImg, 200, 255, THRESH_BINARY);
+	//	threshold(gray, binaryImgINV, 200, 1, THRESH_BINARY_INV);
+	//	Mat binaryImg16S;
+	//	binaryImgINV.convertTo(binaryImg16S, CV_16S);
+	//	imshow("src", src);
+	//	imshow("gray", gray);
+	//	imshow("binaryImg", binaryImg);
+	//	waitKey(0);
+	//	vector<vector<Point>>* contours = new vector<vector<Point>>();
+	//	allContours(binaryImg16S, *contours);
+	//	Mat test;
+	//	drawPoints(binaryImg, test, contours);
+	//	imshow("test", test);
+	//	cout << "area : " << contourArea(contours->at(0));
+	//
+	//	double areaholes = areaHolesID(binaryImg);
+	//	cout << "areaholesid " << areaholes << endl;
+	//	cout << "areaid" << areaID(binaryImg16S) << endl;
 
 	waitKey(0);
 }
