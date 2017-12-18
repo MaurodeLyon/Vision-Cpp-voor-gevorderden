@@ -21,7 +21,7 @@ Mat_<double> Load(string path)
 	cvtColor(image, image_gray, CV_BGR2GRAY);
 
 	Mat image_binary;
-	threshold(image_gray, image_binary, 200, 1, CV_THRESH_BINARY);
+	threshold(image_gray, image_binary, 200, 255, CV_THRESH_BINARY);
 
 	Mat image_binary_inverse;
 	threshold(image_gray, image_binary_inverse, 200, 1, CV_THRESH_BINARY_INV);
@@ -33,8 +33,13 @@ Mat_<double> Load(string path)
 	Mat blobs;
 	int numberOfHoles = numberOfHolesID(image_binary);
 	vector<vector<Point>> contours;
-	allContours(image_binary_inverse, contours);
+	allContours(image_binary_16s, contours);
 	double energy = bendingEnergyID(image_binary_16s);
+
+	double areaholes = areaHolesID(image_binary);
+	cout << "areaholesid " << areaholes << endl;
+	double areaid = areaID(image_binary_16s);
+	cout << "areaid" << areaid << endl;
 	return (Mat_<double>(1, 2) << numberOfHoles , energy);
 }
 
