@@ -175,28 +175,22 @@ void TrainBPN(Mat ITset, Mat OTset, Mat& V0, Mat& W0)
 	cout << "BPN Training is ready!" << endl << endl;
 	cout << "Runs = " << runs << endl << endl;
 
-	Mat inputVectorTrainingSet, outputVectorTrainingSet, outputVectorBPN;
-	cout << setw(1) <<
-		" Training Input" << setw(12) <<
-		"| Expected Output " << setw(1) <<
-		"| Output BPN " << setw(6) <<
-		"|" << endl << endl;
+	cout << setw(1) << " Training Input" << setw(20) << "| Expected Output " << setw(10) << "| Output BPN " << endl;
 	for (int row = 0; row < ITset.rows; row++)
 	{
-		inputVectorTrainingSet = transpose(getRow(ITset, row));
+		Mat inputVectorTrainingSet = transpose(getRow(ITset, row));
 		for (int r = 0; r < inputVectorTrainingSet.rows; r++)
-			cout << setw(8) << getEntry(inputVectorTrainingSet, r, 0);
+			cout << setw(4) << round(getEntry(inputVectorTrainingSet, r, 0) * 100);
 		cout << setw(2) << "|";
 
-		outputVectorTrainingSet = transpose(getRow(OTset, row));
-
+		Mat outputVectorTrainingSet = transpose(getRow(OTset, row));
 		for (int r = 0; r < outputVectorTrainingSet.rows; r++)
-			cout << setw(8) << round(getEntry(outputVectorTrainingSet, r, 0));
+			cout << setw(8) << round(getEntry(outputVectorTrainingSet, r, 0) * 100);
 		cout << setw(2) << "|";
-		outputVectorBPN = BPN(inputVectorTrainingSet, V0, W0);
+
+		Mat outputVectorBPN = BPN(inputVectorTrainingSet, V0, W0);
 		for (int r = 0; r < outputVectorBPN.rows; r++)
-			cout << setw(8) << getEntry(outputVectorBPN, r, 0);
-		cout << setw(2) << "|";
+			cout << setw(4) << round(getEntry(outputVectorBPN, r, 0) * 100);
 		cout << endl;
 	}
 }
@@ -239,14 +233,32 @@ void UseBPN(string image_path, Mat V0, Mat W0)
 int main(int argc, char** argv)
 {
 	Mat ITset, OTset, V0, W0;
+	string dummy;
+	cout << "---- Mauro & Arthur object classification application ----" << endl;
+	cout << "Press enter to check to start training neural network" << endl;
+	getline(cin, dummy);
+
+	// Train neural network with training data
 	loadTrainingSet(ITset, OTset);
 	TrainBPN(ITset, OTset, V0, W0);
-	UseBPN("./../Images/trainingset/vis_16.jpg", V0, W0);
 
-	cout << endl << endl << "Press ENTER for exit";
-	string dummy;
+	cout << "Press enter to check the object" << endl;
 	getline(cin, dummy);
 	getline(cin, dummy);
+
+	VideoCapture capture = VideoCapture(0);
+	if (!capture.isOpened())
+		cout << "Cannot open the video cam" << endl;
+
+	Mat frame;
+	while (true)
+	{
+		capture >> frame;
+		imshow("test", frame);
+		imwrite("test.jpg", frame);
+		waitKey(0);
+		UseBPN("test.jpg", V0, W0);
+	}
 }
 
 double areaHolesID(Mat image_binary)
