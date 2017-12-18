@@ -9,7 +9,7 @@ double areaID(Mat binaryImg16S);
 double areaHolesID(Mat image_binary);
 
 const double MAX_OUTPUT_ERROR = 1E-10;
-const int MAXRUNS = 10000;
+const int MAXRUNS = 25000;
 volatile double* maxHoles;
 volatile double* maxEnergy;
 volatile double* maxAreaHoles;
@@ -52,20 +52,24 @@ void loadTrainingSet(Mat& ITset, Mat& OTset)
 	Mat_<double> rawInputSet;
 	// create input set
 	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_0.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_2.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_3.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_0.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_1.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_0.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_1.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/vis_0.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/vis_1.jpg"));
-	rawInputSet.push_back(Load("./../Images/trainingset/vis_2.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/cat_0.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/flower_0.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/frog_0.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/guitar_0.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/horcrux2.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/skyrim_0.jpg"));
 
 	maxHoles = new double(-1);
 	maxEnergy = new double(-1);
@@ -119,19 +123,17 @@ void loadTrainingSet(Mat& ITset, Mat& OTset)
 	}
 
 	// create desired output
-	OTset = (Mat_<double>(12, 2) <<
-		0, 0,
-		0, 0,
-		0, 0,
-		0, 1,
-		0, 1,
-		0, 1,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 1,
-		1, 1,
-		1, 1);
+	OTset = (Mat_<double>(10, 4) <<
+		0, 0, 0, 0,
+		0, 0, 0, 1,
+		0, 0, 1, 0,
+		0, 0, 1, 1,
+		0, 1, 0, 0,
+		0, 1, 0, 1,
+		0, 1, 1, 0,
+		0, 1, 1, 1,
+		1, 0, 0, 0,
+		1, 0, 0, 1);
 }
 
 void TrainBPN(Mat ITset, Mat OTset, Mat& V0, Mat& W0)
@@ -168,7 +170,7 @@ void TrainBPN(Mat ITset, Mat OTset, Mat& V0, Mat& W0)
 			V0 = V1;
 			W0 = W1;
 		}
-		cout << "Training: " << round(MAX_OUTPUT_ERROR / sumSqrDiffError * 100) << "%" << endl;
+		cout << "Training: " << sumSqrDiffError <<endl;//round(MAX_OUTPUT_ERROR / sumSqrDiffError * 100) << "%" << endl;
 		runs++;
 	}
 
@@ -195,21 +197,21 @@ void TrainBPN(Mat ITset, Mat OTset, Mat& V0, Mat& W0)
 	}
 }
 
-void UseBPN(string image_path, Mat V0, Mat W0)
+void UseBPN(string path, Mat V0, Mat W0)
 {
-	Mat test = Load(image_path);
+	Mat loaded_image = Load(path);
 	double nMaxHoles = 0;
 	double nMaxEnergy = 0;
 	double nMaxAreaHoles = 0;
 	double nMaxArea = 0;
 	if (*maxHoles != 0)
-		nMaxHoles = getEntry(test, 0, 0) / *maxHoles;
+		nMaxHoles = getEntry(loaded_image, 0, 0) / *maxHoles;
 	if (*maxEnergy != 0)
-		nMaxEnergy = getEntry(test, 0, 1) / *maxEnergy;
+		nMaxEnergy = getEntry(loaded_image, 0, 1) / *maxEnergy;
 	if (*maxAreaHoles != 0)
-		nMaxAreaHoles = getEntry(test, 0, 2) / *maxAreaHoles;
+		nMaxAreaHoles = getEntry(loaded_image, 0, 2) / *maxAreaHoles;
 	if (*maxArea != 0)
-		nMaxArea = getEntry(test, 0, 3) / *maxArea;
+		nMaxArea = getEntry(loaded_image, 0, 3) / *maxArea;
 
 	Mat_<double> set = (Mat_<double>(1, 4) <<
 		nMaxHoles,
@@ -251,13 +253,36 @@ int main(int argc, char** argv)
 		cout << "Cannot open the video cam" << endl;
 
 	Mat frame;
+	namedWindow("View", CV_WINDOW_AUTOSIZE);
 	while (true)
 	{
-		capture >> frame;
-		imshow("test", frame);
-		imwrite("test.jpg", frame);
-		waitKey(0);
-		UseBPN("test.jpg", V0, W0);
+		// Lees een nieuw frame
+		bool bSuccess = capture.read(frame);
+
+		// Controlleer of het frame goed gelezen is.
+		if (!bSuccess)
+		{
+			cout << "Cannot read a frame from video stream" << endl;
+			break;
+		}
+
+		Rect roi(Point(72, 20), Point(450, 456));
+		frame = frame(roi);
+		imshow("View", frame);
+
+		//  Wacht 30 ms op ESC-toets. Als ESC-toets is ingedrukt verlaat dan de loop
+		if (waitKey(1) == 27)
+		{
+			cout << "esc key is pressed by user" << endl;
+			break;
+		}
+
+		// Run the image through the BPN when pressing SPACE
+		if (waitKey(1) == 32)
+		{
+			imwrite("test.jpg", frame);
+			UseBPN("test.jpg", V0, W0);
+		}
 	}
 }
 
