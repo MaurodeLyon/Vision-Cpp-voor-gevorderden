@@ -11,14 +11,21 @@ Mat_<double> Load(string path);
 double areaID(Mat binaryImg16S);
 double areaHolesID(Mat image_binary);
 
+double* maxHoles;
+double* maxEnergy;
+double* maxAreaHoles;
+double* maxArea;
 
 Mat_<double> Load(string path)
 {
 	// load image
-	Mat image = imread(path, CV_LOAD_IMAGE_COLOR);
-
+	Mat image_original = imread(path, CV_LOAD_IMAGE_COLOR);
+	Rect roi(Point(72, 20), Point(450, 456));
+	image_original = image_original(roi);
+	//	imshow("x", image_original);
+	//	waitKey(0);
 	Mat image_gray;
-	cvtColor(image, image_gray, CV_BGR2GRAY);
+	cvtColor(image_original, image_gray, CV_BGR2GRAY);
 
 	Mat image_binary;
 	threshold(image_gray, image_binary, 200, 255, CV_THRESH_BINARY);
@@ -41,51 +48,96 @@ Mat_<double> Load(string path)
 	return Mat_<double>(1, 4) << numberOfHoles , energy , areaholes , areaid;
 }
 
-void loadSquareImageTrainingSet(Mat& ITset, Mat& OTset)
+void loadTrainingSet(Mat& ITset, Mat& OTset)
 {
 	Mat_<double> rawInputSet;
 	// create input set
-	rawInputSet.push_back(Load("./../Images/trainingSquare.png"));
-	rawInputSet.push_back(Load("./../Images/trainingCircle.png"));
+	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_2.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_3.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_2.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_2.jpg"));
+
+	rawInputSet.push_back(Load("./../Images/trainingset/vis_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/vis_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/vis_2.jpg"));
 	printMatrix(rawInputSet);
-	double maxHoles = -1, maxEnergy = -1, maxAreaHoles = -1, maxArea = -1;
+	double holes = -1;
+	double energy = -1;
+	double areaHoles = -1;
+	double area = -1;
+	maxHoles = &holes;
+	maxEnergy = &energy;
+	maxAreaHoles = &areaHoles;
+	maxArea = &area;
 
 	// normalisatie
 	for (int row = 0; row < rawInputSet.rows; row++)
 	{
-		if (getEntry(rawInputSet, row, 0) > maxHoles)
+		if (getEntry(rawInputSet, row, 0) > * maxHoles)
 		{
-			maxHoles = getEntry(rawInputSet, row, 0);
+			*maxHoles = getEntry(rawInputSet, row, 0);
 		}
-		if (getEntry(rawInputSet, row, 1) > maxEnergy)
+		if (getEntry(rawInputSet, row, 1) > * maxEnergy)
 		{
-			maxEnergy = getEntry(rawInputSet, row, 1);
+			*maxEnergy = getEntry(rawInputSet, row, 1);
 		}
-		if (getEntry(rawInputSet, row, 2) > maxAreaHoles)
+		if (getEntry(rawInputSet, row, 2) > * maxAreaHoles)
 		{
-			maxAreaHoles = getEntry(rawInputSet, row, 2);
+			*maxAreaHoles = getEntry(rawInputSet, row, 2);
 		}
-		if (getEntry(rawInputSet, row, 3) > maxArea)
+		if (getEntry(rawInputSet, row, 3) > * maxArea)
 		{
-			maxArea = getEntry(rawInputSet, row, 3);
+			*maxArea = getEntry(rawInputSet, row, 3);
 		}
 	}
 
 	// create input set
 	for (int row = 0; row < rawInputSet.rows; row++)
 	{
+		double nMaxHoles = 0;
+		double nMaxEnergy = 0;
+		double nMaxAreaHoles = 0;
+		double nMaxArea = 0;
+		if (*maxHoles != 0)
+			nMaxHoles = getEntry(rawInputSet, row, 0) / *maxHoles;
+		if (*maxEnergy != 0)
+			nMaxEnergy = getEntry(rawInputSet, row, 1) / *maxEnergy;
+		if (*maxAreaHoles != 0)
+			nMaxAreaHoles = getEntry(rawInputSet, row, 2) / *maxAreaHoles;
+		if (*maxArea != 0)
+			nMaxArea = getEntry(rawInputSet, row, 3) / *maxArea;
+
 		Mat_<double> set = (Mat_<double>(1, 4) <<
-			getEntry(rawInputSet, row, 0) / maxHoles ,
-			getEntry(rawInputSet, row, 1) / maxEnergy ,
-			getEntry(rawInputSet, row, 2) / maxAreaHoles ,
-			getEntry(rawInputSet, row, 3) / maxArea);
+			nMaxHoles ,
+			nMaxEnergy ,
+			nMaxAreaHoles ,
+			nMaxArea
+		);
 		ITset.push_back(set);
 	}
 	printMatrix(ITset);
 
 	// create desired output
-	OTset = (Mat_<double>(2, 1) << 0
-		, 1);
+	OTset = (Mat_<double>(12, 2) <<
+		0 , 0 ,
+		0 , 0 ,
+		0 , 0 ,
+		0 , 1 ,
+		0 , 1 ,
+		0 , 1 ,
+		1 , 0 ,
+		1 , 0 ,
+		1 , 0 ,
+		1 , 1 ,
+		1 , 1 ,
+		1 , 1);
 
 	string c;
 	getline(cin, c);
@@ -97,8 +149,11 @@ const int MAXRUNS = 10000;
 int main(int argc, char** argv)
 {
 	Mat ITset, OTset;
-	loadSquareImageTrainingSet(ITset, OTset);
-
+	loadTrainingSet(ITset, OTset);
+	double mHoles = *maxHoles;
+	double mEnergy = *maxEnergy;
+	double mAreaHoles = *maxAreaHoles;
+	double mArea = *maxArea;
 	Mat V0, W0, dW0, dV0;
 
 	int hiddenNeurons = 2;
@@ -168,8 +223,29 @@ int main(int argc, char** argv)
 		cout << setw(2) << "|";
 		cout << endl;
 	}
-	Mat test = (Mat_<double>(2, 1) << 1 , 1);
-	Mat result = BPN(test, V0, W0);
+	Mat test = Load("./../Images/trainingset/vis_16.jpg");
+
+	double nMaxHoles = 0;
+	double nMaxEnergy = 0;
+	double nMaxAreaHoles = 0;
+	double nMaxArea = 0;
+	if (mHoles != 0)
+		nMaxHoles = getEntry(test, 0, 0) / mHoles;
+	if (mEnergy != 0)
+		nMaxEnergy = getEntry(test, 0, 1) / mEnergy;
+	if (mAreaHoles != 0)
+		nMaxAreaHoles = getEntry(test, 0, 2) / mAreaHoles;
+	if (mArea != 0)
+		nMaxArea = getEntry(test, 0, 3) / mArea;
+
+	Mat_<double> set = (Mat_<double>(1, 4) <<
+		nMaxHoles ,
+		nMaxEnergy ,
+		nMaxAreaHoles ,
+		nMaxArea
+	);
+
+	Mat result = BPN(transpose(set), V0, W0);
 	cout << "results : " << endl;
 	for (int row = 0; row < result.rows; row++)
 	{
@@ -220,15 +296,11 @@ int main(int argc, char** argv)
 	//}
 	*/
 
-	Mat src = imread("./../Images/trainingset/horcrux2.jpg", CV_LOAD_IMAGE_COLOR);
-	Rect r(Point(60, 68), Point(450, 456));//
-
 
 	/*bounding_box.push_back(left_border);
 	bounding_box.push_back(right_border);
 	bounding_box.push_back(top_border);
 	bounding_box.push_back(bottom_border);*/
-	//	src = src(r);
 	//	Mat gray;
 	//	cvtColor(src, gray, CV_BGR2GRAY);
 	//	Mat binaryImg;
@@ -271,6 +343,10 @@ double areaHolesID(Mat image_binary)
 			area += r.area();
 			count++;
 		}
+	}
+	if (count == 0)
+	{
+		return 0;
 	}
 	return area / count;
 }
