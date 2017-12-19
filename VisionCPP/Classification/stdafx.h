@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <tchar.h>
 
+#include <sstream>
+#include <iterator>
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include "avansvisionlib20.h"

@@ -8,8 +8,11 @@ double bendingEnergyID(Mat image_binary_16s);
 double areaID(Mat binaryImg16S);
 double areaHolesID(Mat image_binary);
 
+void writeMat(string filename, Mat V0, Mat W0);
+void readMat(string filename, Mat &V0, Mat &W0);
+
 const double MAX_OUTPUT_ERROR = 1E-10;
-const int MAXRUNS = 25000;
+const int MAXRUNS = 75000;
 volatile double* maxHoles;
 volatile double* maxEnergy;
 volatile double* maxAreaHoles;
@@ -19,8 +22,11 @@ Mat_<double> Load(string path)
 {
 	// load image
 	Mat image_original = imread(path, CV_LOAD_IMAGE_COLOR);
+	
 	Rect roi(Point(72, 20), Point(450, 456));
+	//Rect roi(Point(65, 15), Point(455, 465));
 	image_original = image_original(roi);
+	
 	//	imshow("x", image_original);
 	//	waitKey(0);
 	Mat image_gray;
@@ -236,55 +242,160 @@ int main(int argc, char** argv)
 {
 	Mat ITset, OTset, V0, W0;
 	string dummy;
+
+	bool correctAnswer = false;
+	string opt = "";
+
 	cout << "---- Mauro & Arthur object classification application ----" << endl;
-	cout << "Press enter to check to start training neural network" << endl;
-	getline(cin, dummy);
+	cout << "Choose one of the following options " << endl << "1 - Load earlier trained neural network " << endl << "2 - Train neural network from scratch " << endl;
 
-	// Train neural network with training data
-	loadTrainingSet(ITset, OTset);
-	TrainBPN(ITset, OTset, V0, W0);
+	while (!correctAnswer)
+	{
+		getline(cin, opt);
+		if (opt == "1" || opt == "2")
+			correctAnswer = true;
+	}
 
-	cout << "Press enter to check the object" << endl;
-	getline(cin, dummy);
-	getline(cin, dummy);
 
-	VideoCapture capture = VideoCapture(0);
-	if (!capture.isOpened())
-		cout << "Cannot open the video cam" << endl;
+	if (opt == "1")
+	{
+		maxHoles = new double(-1);
+		maxEnergy = new double(-1);
+		maxAreaHoles = new double(-1);
+		maxArea = new double(-1);
 
+		Mat *prevV0 = new Mat();
+		Mat *prevW0 = new Mat();
+		readMat("test", *prevV0,*prevW0);
+		V0 = *prevV0;
+		W0 = *prevW0;
+
+		cout << "loaded V0: " << V0 << endl;
+		
+
+		cout << "loaded W0: " << W0 << endl;
+
+		
+	}
+	else
+	{
+		cout << "Press enter to check to start training neural network" << endl;
+		getline(cin, dummy);
+
+		// Train neural network with training data
+		loadTrainingSet(ITset, OTset);
+		TrainBPN(ITset, OTset, V0, W0);
+
+		/*ofstream myfile;
+		myfile.open("BPNCONFIG.txt");
+		if (myfile.is_open())
+		{
+			myfile << "V0 " << V0 << endl;
+			myfile << "W0 " << W0 << endl;
+			myfile.close();
+		}*/
+		cout << "V0: " << V0 << endl;
+
+
+		cout << "W0: " << W0 << endl;
+		writeMat("test", V0,W0);
+	}
+	opt = "";
+	correctAnswer = false;
+	
+	cout << "Choose one of the following options " << endl << "1 - Check object with camera feed " << endl << "2 - Check object from image" << endl;
+	
+	while (!correctAnswer)
+	{
+		getline(cin, opt);
+		if (opt == "1" || opt == "2")
+			correctAnswer = true;
+	}
+	
 	Mat frame;
 	namedWindow("View", CV_WINDOW_AUTOSIZE);
-	while (true)
+	
+	if (opt == "1")
 	{
-		// Lees een nieuw frame
-		bool bSuccess = capture.read(frame);
+		cout << "Press enter to check the object" << endl;
+		getline(cin, dummy);
+		getline(cin, dummy);
 
-		// Controlleer of het frame goed gelezen is.
-		if (!bSuccess)
+		VideoCapture capture = VideoCapture(0);
+		if (!capture.isOpened())
+			cout << "Cannot open the video cam" << endl;
+
+		
+		while (true)
 		{
-			cout << "Cannot read a frame from video stream" << endl;
-			break;
-		}
+			// Lees een nieuw frame
+			bool bSuccess = capture.read(frame);
 
-		Rect roi(Point(72, 20), Point(450, 456));
-		frame = frame(roi);
-		imshow("View", frame);
+			// Controlleer of het frame goed gelezen is.
+			if (!bSuccess)
+			{
+				cout << "Cannot read a frame from video stream" << endl;
+				break;
+			}
 
-		//  Wacht 30 ms op ESC-toets. Als ESC-toets is ingedrukt verlaat dan de loop
-		if (waitKey(1) == 27)
-		{
-			cout << "esc key is pressed by user" << endl;
-			break;
-		}
+			Rect roi(Point(72, 20), Point(450, 456));
+			//Rect roi(Point(65, 15), Point(455, 465));
+			frame = frame(roi);
+			imshow("View", frame);
 
-		// Run the image through the BPN when pressing SPACE
-		if (waitKey(1) == 32)
-		{
-			imwrite("test.jpg", frame);
-			UseBPN("test.jpg", V0, W0);
+			//  Wacht 30 ms op ESC-toets. Als ESC-toets is ingedrukt verlaat dan de loop
+			if (waitKey(1) == 27)
+			{
+				cout << "esc key is pressed by user" << endl;
+				break;
+			}
+
+			// Run the image through the BPN when pressing SPACE
+			if (waitKey(1) == 32)
+			{
+				imwrite("snapshot.jpg", frame);
+				UseBPN("snapshot.jpg", V0, W0);
+			}
 		}
+		
 	}
+	else
+	{
+		string path;
+		
+		bool fileLoaded = false;
+		
+		while (!fileLoaded)
+		{
+			cout << "Press enter the filename of the training image you want to use" << endl;
+			getline(cin, path);
+			frame = imread("./../Images/trainingset/" + path + ".jpg", CV_LOAD_IMAGE_COLOR);
+
+			if (frame.data)
+				fileLoaded = true;
+
+		}
+
+		//Rect roi(Point(65, 15), Point(455, 465));
+		//Rect roi(Point(0, 0), Point(50, 50));
+		//Rect roi(Point(72, 20), Point(450, 456));
+		
+		
+		//frame = frame(roi);
+		imshow("View", frame);
+		waitKey(0);
+		imwrite("snapshot.jpg", frame);
+		UseBPN("snapshot.jpg", V0, W0);
+		
+
+
+
+	}
+
+	
 }
+
+
 
 double areaHolesID(Mat image_binary)
 {
@@ -347,4 +458,47 @@ double bendingEnergyID(Mat image_binary_16s)
 		bendingEnergyID = bendingEnergy(image_binary_16s, contour);
 	}
 	return bendingEnergyID;
+}
+
+void writeMat(string filename, Mat V0, Mat W0)
+{
+	
+	FileStorage fs(filename + ".xml", FileStorage::WRITE);
+	fs << "V0" << V0;
+	fs << "W0" << W0;
+
+	fs << "maxHoles" << *maxHoles;
+	fs << "maxEnergy" << *maxEnergy;
+	fs << "maxAreaHoles" << *maxAreaHoles;
+	fs << "maxArea" << *maxArea;
+
+
+	fs.release();
+}
+
+	
+
+void readMat(string filename, Mat &V0, Mat &W0)
+{
+	FileStorage fs(filename+".xml", FileStorage::READ);
+	fs["V0"] >> V0;
+	fs["W0"] >> W0;
+	
+	double nMaxHoles = 0;
+	double nMaxEnergy = 0;
+	double nMaxAreaHoles = 0;
+	double nMaxArea = 0;
+
+	fs["maxHoles"] >> nMaxHoles;
+	fs["maxEnergy"] >> nMaxEnergy;
+	fs["maxAreaHoles"] >> nMaxAreaHoles;;
+	fs["maxArea"] >> nMaxArea;
+
+	*maxHoles = nMaxHoles;
+	*maxEnergy = nMaxEnergy;
+	*maxAreaHoles = nMaxAreaHoles;
+	*maxArea = nMaxArea;
+
+	
+	fs.release();
 }
