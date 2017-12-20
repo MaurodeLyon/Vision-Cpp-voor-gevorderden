@@ -9,7 +9,7 @@ double areaID(Mat binaryImg16S);
 double areaHolesID(Mat image_binary);
 
 void writeMat(string filename, Mat V0, Mat W0);
-void readMat(string filename, Mat &V0, Mat &W0);
+void readMat(string filename, Mat& V0, Mat& W0);
 
 const double MAX_OUTPUT_ERROR = 1E-10;
 const int MAXRUNS = 200000;
@@ -22,11 +22,11 @@ Mat_<double> Load(string path)
 {
 	// load image
 	Mat image_original = imread(path, CV_LOAD_IMAGE_COLOR);
-	
+
 	Rect roi(Point(72, 20), Point(450, 456));
 	//Rect roi(Point(65, 15), Point(455, 465));
 	image_original = image_original(roi);
-	
+
 	//	imshow("x", image_original);
 	//	waitKey(0);
 	Mat image_gray;
@@ -216,7 +216,7 @@ void TrainBPN(Mat ITset, Mat OTset, Mat& V0, Mat& W0)
 			V0 = V1;
 			W0 = W1;
 		}
-		cout << "Training: " << sumSqrDiffError <<endl;//round(MAX_OUTPUT_ERROR / sumSqrDiffError * 100) << "%" << endl;
+		cout << "Training: " << sumSqrDiffError << endl;//round(MAX_OUTPUT_ERROR / sumSqrDiffError * 100) << "%" << endl;
 		runs++;
 	}
 
@@ -287,7 +287,8 @@ int main(int argc, char** argv)
 	string opt = "";
 
 	cout << "---- Mauro & Arthur object classification application ----" << endl;
-	cout << "Choose one of the following options " << endl << "1 - Load earlier trained neural network " << endl << "2 - Train neural network from scratch " << endl;
+	cout << "Choose one of the following options " << endl << "1 - Load earlier trained neural network " << endl <<
+		"2 - Train neural network from scratch " << endl;
 
 	while (!correctAnswer)
 	{
@@ -304,18 +305,16 @@ int main(int argc, char** argv)
 		maxAreaHoles = new double(-1);
 		maxArea = new double(-1);
 
-		Mat *prevV0 = new Mat();
-		Mat *prevW0 = new Mat();
-		readMat("test", *prevV0,*prevW0);
+		Mat* prevV0 = new Mat();
+		Mat* prevW0 = new Mat();
+		readMat("test", *prevV0, *prevW0);
 		V0 = *prevV0;
 		W0 = *prevW0;
 
 		cout << "loaded V0: " << V0 << endl;
-		
+
 
 		cout << "loaded W0: " << W0 << endl;
-
-		
 	}
 	else
 	{
@@ -338,23 +337,24 @@ int main(int argc, char** argv)
 
 
 		cout << "W0: " << W0 << endl;
-		writeMat("test", V0,W0);
+		writeMat("test", V0, W0);
 	}
 	opt = "";
 	correctAnswer = false;
-	
-	cout << "Choose one of the following options " << endl << "1 - Check object with camera feed " << endl << "2 - Check object from image" << endl;
-	
+
+	cout << "Choose one of the following options " << endl << "1 - Check object with camera feed " << endl <<
+		"2 - Check object from image" << endl;
+
 	while (!correctAnswer)
 	{
 		getline(cin, opt);
 		if (opt == "1" || opt == "2")
 			correctAnswer = true;
 	}
-	
+
 	Mat frame;
 	namedWindow("View", CV_WINDOW_AUTOSIZE);
-	
+
 	if (opt == "1")
 	{
 		cout << "Press enter to check the object" << endl;
@@ -365,7 +365,7 @@ int main(int argc, char** argv)
 		if (!capture.isOpened())
 			cout << "Cannot open the video cam" << endl;
 
-		
+
 		while (true)
 		{
 			// Lees een nieuw frame
@@ -397,14 +397,13 @@ int main(int argc, char** argv)
 				UseBPN("snapshot.jpg", V0, W0);
 			}
 		}
-		
 	}
 	else
 	{
 		string path;
-		
+
 		bool fileLoaded = false;
-		
+
 		while (!fileLoaded)
 		{
 			cout << "Please enter the filename of the training image you want to use" << endl;
@@ -413,29 +412,20 @@ int main(int argc, char** argv)
 
 			if (frame.data)
 				fileLoaded = true;
-
 		}
 
 		//Rect roi(Point(65, 15), Point(455, 465));
 		//Rect roi(Point(0, 0), Point(50, 50));
 		//Rect roi(Point(72, 20), Point(450, 456));
-		
-		
+
+
 		//frame = frame(roi);
 		imshow("View", frame);
 		waitKey(0);
 		imwrite("snapshot.jpg", frame);
 		UseBPN("snapshot.jpg", V0, W0);
-		
-
-
-
 	}
-
-	
 }
-
-
 
 double areaHolesID(Mat image_binary)
 {
@@ -502,7 +492,6 @@ double bendingEnergyID(Mat image_binary_16s)
 
 void writeMat(string filename, Mat V0, Mat W0)
 {
-	
 	FileStorage fs(filename + ".xml", FileStorage::WRITE);
 	fs << "V0" << V0;
 	fs << "W0" << W0;
@@ -516,14 +505,12 @@ void writeMat(string filename, Mat V0, Mat W0)
 	fs.release();
 }
 
-	
-
-void readMat(string filename, Mat &V0, Mat &W0)
+void readMat(string filename, Mat& V0, Mat& W0)
 {
-	FileStorage fs(filename+".xml", FileStorage::READ);
+	FileStorage fs(filename + ".xml", FileStorage::READ);
 	fs["V0"] >> V0;
 	fs["W0"] >> W0;
-	
+
 	double nMaxHoles = 0;
 	double nMaxEnergy = 0;
 	double nMaxAreaHoles = 0;
@@ -539,6 +526,6 @@ void readMat(string filename, Mat &V0, Mat &W0)
 	*maxAreaHoles = nMaxAreaHoles;
 	*maxArea = nMaxArea;
 
-	
+
 	fs.release();
 }
