@@ -12,7 +12,7 @@ void writeMat(string filename, Mat V0, Mat W0);
 void readMat(string filename, Mat &V0, Mat &W0);
 
 const double MAX_OUTPUT_ERROR = 1E-10;
-const int MAXRUNS = 75000;
+const int MAXRUNS = 200000;
 volatile double* maxHoles;
 volatile double* maxEnergy;
 volatile double* maxAreaHoles;
@@ -58,24 +58,44 @@ void loadTrainingSet(Mat& ITset, Mat& OTset)
 	Mat_<double> rawInputSet;
 	// create input set
 	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/baaterang_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/cameLEON_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/butterfly_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/vis_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/vis_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/vis_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/cat_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/cat_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/cat_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/flower_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/flower_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/flower_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/frog_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/frog_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/frog_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/guitar_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/guitar_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/guitar_2.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/horcrux2.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/horcrux3.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/horcrux4.jpg"));
 
 	rawInputSet.push_back(Load("./../Images/trainingset/skyrim_0.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/skyrim_1.jpg"));
+	rawInputSet.push_back(Load("./../Images/trainingset/skyrim_2.jpg"));
 
 	maxHoles = new double(-1);
 	maxEnergy = new double(-1);
@@ -129,16 +149,36 @@ void loadTrainingSet(Mat& ITset, Mat& OTset)
 	}
 
 	// create desired output
-	OTset = (Mat_<double>(10, 4) <<
+	OTset = (Mat_<double>(30, 4) <<
+		0, 0, 0, 0,
+		0, 0, 0, 0,
 		0, 0, 0, 0,
 		0, 0, 0, 1,
+		0, 0, 0, 1,
+		0, 0, 0, 1,
+		0, 0, 1, 0,
+		0, 0, 1, 0,
 		0, 0, 1, 0,
 		0, 0, 1, 1,
+		0, 0, 1, 1,
+		0, 0, 1, 1,
+		0, 1, 0, 0,
+		0, 1, 0, 0,
 		0, 1, 0, 0,
 		0, 1, 0, 1,
+		0, 1, 0, 1,
+		0, 1, 0, 1,
+		0, 1, 1, 0,
+		0, 1, 1, 0,
 		0, 1, 1, 0,
 		0, 1, 1, 1,
+		0, 1, 1, 1,
+		0, 1, 1, 1,
 		1, 0, 0, 0,
+		1, 0, 0, 0,
+		1, 0, 0, 0,
+		1, 0, 0, 1,
+		1, 0, 0, 1,
 		1, 0, 0, 1);
 }
 
@@ -367,7 +407,7 @@ int main(int argc, char** argv)
 		
 		while (!fileLoaded)
 		{
-			cout << "Press enter the filename of the training image you want to use" << endl;
+			cout << "Please enter the filename of the training image you want to use" << endl;
 			getline(cin, path);
 			frame = imread("./../Images/trainingset/" + path + ".jpg", CV_LOAD_IMAGE_COLOR);
 
