@@ -18,6 +18,19 @@ volatile double* maxEnergy;
 volatile double* maxAreaHoles;
 volatile double* maxArea;
 
+int convertBinaryToDecimal(long long n)
+{
+	int decimalNumber = 0, i = 0, remainder;
+	while (n != 0)
+	{
+		remainder = n % 10;
+		n /= 10;
+		decimalNumber += remainder * pow(2, i);
+		++i;
+	}
+	return decimalNumber;
+}
+
 Mat_<double> Load(string path)
 {
 	// load image
@@ -267,14 +280,50 @@ void UseBPN(string path, Mat V0, Mat W0)
 	);
 
 	Mat result = BPN(transpose(set), V0, W0);
-	cout << "results : " << endl;
-	for (int row = 0; row < result.rows; row++)
+	string binary;
+	for (int row = result.rows; row > 0; row--)
 	{
-		for (int col = 0; col < result.cols; col++)
-		{
-			cout << getEntry(result, row, col);
-		}
-		cout << endl;
+		cout << getEntry(result, row, 0) << endl;
+		if (getEntry(result, row, 0) > 0.1)
+			binary += "1";
+		else
+			binary += "0";
+	}
+	cout << "results : " << endl;
+	cout << "binary: " << binary << endl;
+	cout << "decimal number: " << convertBinaryToDecimal(stod(binary)) << endl;
+	switch (convertBinaryToDecimal(stod(binary)))
+	{
+	case 0:
+		cout << "Conclusion: Batarang" << endl;
+		break;
+	case 1:
+		cout << "Conclusion: Chameleon" << endl;
+		break;
+	case 2:
+		cout << "Conclusion: Butterfly" << endl;
+		break;
+	case 3:
+		cout << "Conclusion: Fish" << endl;
+		break;
+	case 4:
+		cout << "Conclusion: Cat" << endl;
+		break;
+	case 5:
+		cout << "Conclusion: Flower" << endl;
+		break;
+	case 6:
+		cout << "Conclusion: Frog" << endl;
+		break;
+	case 7:
+		cout << "Conclusion: Guitar" << endl;
+		break;
+	case 8:
+		cout << "Conclusion: Horcrux" << endl;
+		break;
+	case 9:
+		cout << "Conclusion: Skyrim" << endl;
+		break;
 	}
 }
 
